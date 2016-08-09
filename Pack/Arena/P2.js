@@ -911,10 +911,10 @@ function Update() {
 		// You may want a more ... intelligent algorithm here.
 		if (Math.random() > 0.9) {
 			var direction = (Math.random() * 4) >> 0;
-			CommandTank (i, direction + 1, false, false); // Turn into the direction, keep moving, and firing like there is no tomorrow
+			CommandTank (i, direction + 1, false, true); // Turn into the direction, keep moving, and firing like there is no tomorrow
 		}
 		else {
-			CommandTank (i, null, false, false); // Keep the old direction, keep on moving and firing.
+			CommandTank (i, null, false, true); // Keep the old direction, keep on moving and firing.
 		}
 	}
 

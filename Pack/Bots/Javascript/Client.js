@@ -831,7 +831,6 @@ function ClearShot(Source_x, Source_y, Destine_x, Destine_y ){
 	if (Source_x - 1 < Destine_x && Destine_x < Source_x + 1){
 		if (Source_y < Destine_y){
 			for(var y = Source_y; y < Destine_y; y++){
-				console.log("gettileat"+Source_x+y+FlooredGetTile);
 				FlooredGetTile = GetTileAt(Math.floor(Source_x), Math.floor(y));
 				if ((FlooredGetTile == BLOCK_HARD_OBSTACLE) || (FlooredGetTile == BLOCK_BASE)) return Source_x, y;
 			}
@@ -930,7 +929,7 @@ function isEmpty(obj) {
 
 function InArray(Element, Array){
 	for( x in Array){
-		if (x == Element) return true;
+		if (Array[x] == Element) return true;
 	}
 	return false;
 }
@@ -1123,7 +1122,7 @@ function Update() {
 					}
 					if (tempTank.m_coolDown > 0) {
 						direction = Navigate(tempTank.m_x, tempTank.m_y, enemytank.m_x, enemytank.m_y)["Left_Right"];
-						if(enemytank.m_disabled == true ||(enemytank.m_coolDown > 0 && enemytank.m_direction != Opposite(direction)))
+						if(enemytank.m_disabled == true ||(enemytank.m_coolDown > 0 && enemytank.m_direction != Opposite(Navigate(tempTank.m_x, tempTank.m_y, enemytank.m_x, enemytank.m_y)["Up_Down"])))
 						{
 							shot = false;
 							break;
@@ -1145,7 +1144,7 @@ function Update() {
 					}
 					if (tempTank.m_coolDown >0){
 						direction = Navigate(tempTank.m_x, tempTank.m_y, enemytank.m_x, enemytank.m_y)["Up_Down"];
-						if(enemytank.m_disabled == true ||(enemytank.m_coolDown > 0 && enemytank.m_direction != Opposite(direction)))
+						if(enemytank.m_disabled == true ||(enemytank.m_coolDown > 0 && enemytank.m_direction != Opposite(Navigate(tempTank.m_x, tempTank.m_y, enemytank.m_x, enemytank.m_y)["Left_Right"])))
 						{
 							shot = false;
 							break;
@@ -1163,6 +1162,7 @@ function Update() {
 		}else {
 			direction = Opposite(GetMyTank(i).m_direction);
 			if(InArray(i, stuck["MyStuckTanks"])){
+				console.log("tank i stuck in "+ stuck["MyStuckTanks"]);
 				console.log("tank"+i+"is stucking in if " + stuck["MyStuckTanks"]);
 				if (!InArray(direction, GetTankDirection(i)))
 				{

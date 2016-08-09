@@ -831,7 +831,6 @@ function ClearShot(Source_x, Source_y, Destine_x, Destine_y ){
 	if (Source_x - 1 < Destine_x && Destine_x < Source_x + 1){
 		if (Source_y < Destine_y){
 			for(var y = Source_y; y < Destine_y; y++){
-				console.log("gettileat"+Source_x+y+FlooredGetTile);
 				FlooredGetTile = GetTileAt(Math.floor(Source_x), Math.floor(y));
 				if ((FlooredGetTile == BLOCK_HARD_OBSTACLE) || (FlooredGetTile == BLOCK_BASE)) return Source_x, y;
 			}
@@ -929,11 +928,8 @@ function isEmpty(obj) {
 
 
 function InArray(Element, Array){
-	for(var x in Array){
-		if (Array[x] == Element) {
-			console.log("found " + Element + "in"+ Array);
-			return true;
-		}
+	for( x in Array){
+		if (Array[x] == Element) return true;
 	}
 	return false;
 }
@@ -981,7 +977,7 @@ function SeekDestroy(MyTankIndex){
 		var returnarray = [];
 			for(i in ReturnMove)
 			{
-				if(ReturnMove[i] > 1)
+				if(ReturnMove[i] > 0)
 				{
 					returnarray.push(i);
 				}
@@ -1089,7 +1085,7 @@ function Update() {
 	// In this example, I go through all of my "still intact" tanks, and give them random commands.
 	// =========================================================================================================
 	// Loop through all tank (if not dead yet)
-	for (var i=0; i<NUMBER_OF_TANK; i++) {
+	for (var i=0; i<1; i++) {
 		var tempTank = GetMyTank(i);
 		// Don't waste effort if tank was dead
 		if((tempTank == null) ||(tempTank.m_HP == 0))
@@ -1126,7 +1122,7 @@ function Update() {
 					}
 					if (tempTank.m_coolDown > 0) {
 						direction = Navigate(tempTank.m_x, tempTank.m_y, enemytank.m_x, enemytank.m_y)["Left_Right"];
-						if(enemytank.m_disabled == true ||(enemytank.m_coolDown > 0 && enemytank.m_direction != Opposite(direction)))
+						if(enemytank.m_disabled == true ||(enemytank.m_coolDown > 0 && enemytank.m_direction != Opposite(Navigate(tempTank.m_x, tempTank.m_y, enemytank.m_x, enemytank.m_y)["Up_Down"])))
 						{
 							shot = false;
 							break;
@@ -1148,7 +1144,7 @@ function Update() {
 					}
 					if (tempTank.m_coolDown >0){
 						direction = Navigate(tempTank.m_x, tempTank.m_y, enemytank.m_x, enemytank.m_y)["Up_Down"];
-						if(enemytank.m_disabled == true ||(enemytank.m_coolDown > 0 && enemytank.m_direction != Opposite(direction)))
+						if(enemytank.m_disabled == true ||(enemytank.m_coolDown > 0 && enemytank.m_direction != Opposite(Navigate(tempTank.m_x, tempTank.m_y, enemytank.m_x, enemytank.m_y)["Left_Right"])))
 						{
 							shot = false;
 							break;
@@ -1164,20 +1160,15 @@ function Update() {
 			 }
 
 		}else {
+			direction = Opposite(GetMyTank(i).m_direction);
 			if(InArray(i, stuck["MyStuckTanks"])){
-				console.log("tank"+i+"is stucking in if " + stuck["MyStuckTanks"]+ "old direction" +tempTank.m_direction+"tank direction"+ GetTankDirection(i));
-				if (!InArray(GetMyTank(i).m_direction, GetTankDirection(i)))
+				console.log("tank i stuck in "+ stuck["MyStuckTanks"]);
+				console.log("tank"+i+"is stucking in if " + stuck["MyStuckTanks"]);
+				if (!InArray(direction, GetTankDirection(i)))
 				{
-					InArray(GetMyTank(i).m_direction, GetTankDirection(i));
-					console.log("Tank " +i+ " exit way is block before getrandom direction" + VerboseDirection(direction) +GetMyTank(i).m_direction+ GetTankDirection(i) +InArray(GetMyTank(i).m_direction, GetTankDirection(i)));
-					if(InArray(GetMyTank(i).m_direction, GetTankDirection(i))){
-						direction= tempTank.m_direction;
-						console.log("old direction is clear "+ direction);
-					}
-					else {
-					direction = GetTankDirection(i)[Math.floor(Math.random() * 3)];
-					console.log("what the hell it run to else" + VerboseDirection(direction));
-					}
+					console.log("Tank " +i+ " exit way is block before getrandom direction" + VerboseDirection(direction));
+					direction = GetTankDirection(i)[Math.floor((Math.random() * 3))];
+					console.log("Found common in action" + " SEEK "+SeekDestroy(i)+ " GETTANK "+GetTankDirection(i)+" FOind common "+ VerboseDirection(direction));
 				}
 				else{
 					direction = FoundCommon(SeekDestroy(i), GetTankDirection(i))[Math.floor((Math.random() * 3))];
@@ -1189,17 +1180,18 @@ function Update() {
 				direction = FoundCommon(SeekDestroy(i), GetTankDirection(i))[Math.floor((Math.random() * 3))];
 				shot = false;
 				console.log("Tank "+ i +" go random" +VerboseDirection(direction));
+				console.log("seek destroy: " + SeekDestroy(i) + " Get direction " +GetTankDirection(i)) ;
 			}
 			else {
 				{
-					console.log("Tank "+ i+" go forth" +VerboseDirection(GetMyTank(i).m_direction));
+					console.log("Tank "+ i+" go forth");
 					direction = null;//
 					shot = false;
 				}
 			}
 		}
 
-		console.log("tank "+i+" final destination"+ VerboseDirection(direction) + VerboseDirection(GetMyTank(i).m_direction));
+		console.log("tank "+i+" final destination"+ VerboseDirection(direction));
 		// console.log("my current potision x: "+tempTank.m_x + " y: " + tempTank.m_y);
 		CommandTank(i, direction, true, shot);
 }
