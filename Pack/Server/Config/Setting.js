@@ -2,8 +2,11 @@ var Enum = require("./Enum");
 
 // ====================================================================================================
 // System
-exports.CONNECTION_TIMEOUT = 5000;
-exports.PICK_TANK_TIMEOUT = 5000;
+
+//exports.CONNECTION_TIMEOUT = 5000; // <= These are values for real server
+//exports.PICK_TANK_TIMEOUT = 5000;
+exports.CONNECTION_TIMEOUT = 999999; // On local server, we should increase this, for testing purpose
+exports.PICK_TANK_TIMEOUT = 999999;
 // ====================================================================================================
 
 // ====================================================================================================

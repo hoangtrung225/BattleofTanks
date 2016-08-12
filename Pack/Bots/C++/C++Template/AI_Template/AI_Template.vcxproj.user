@@ -12,7 +12,15 @@
     <LocalDebuggerCommandArguments>-h 127.0.0.1 -p 3011 -k 11</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='2015_Debug|Win32'">
+    <LocalDebuggerCommandArguments>-h 127.0.0.1 -p 3011 -k 11</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='2013_Release|Win32'">
+    <LocalDebuggerCommandArguments>-h 127.0.0.1 -p 3011 -k 11</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='2015_Release|Win32'">
     <LocalDebuggerCommandArguments>-h 127.0.0.1 -p 3011 -k 11</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>

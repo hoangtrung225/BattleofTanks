@@ -11,6 +11,8 @@ Global
 		2012_Release|Win32 = 2012_Release|Win32
 		2013_Debug|Win32 = 2013_Debug|Win32
 		2013_Release|Win32 = 2013_Release|Win32
+		2015_Debug|Win32 = 2015_Debug|Win32
+		2015_Release|Win32 = 2015_Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{C5ECF5E5-3E73-4D41-917C-8557CC6449C9}.2012_Debug|Win32.ActiveCfg = 2012_Debug|Win32
@@ -21,6 +23,10 @@ Global
 		{C5ECF5E5-3E73-4D41-917C-8557CC6449C9}.2013_Debug|Win32.Build.0 = 2013_Debug|Win32
 		{C5ECF5E5-3E73-4D41-917C-8557CC6449C9}.2013_Release|Win32.ActiveCfg = 2013_Release|Win32
 		{C5ECF5E5-3E73-4D41-917C-8557CC6449C9}.2013_Release|Win32.Build.0 = 2013_Release|Win32
+		{C5ECF5E5-3E73-4D41-917C-8557CC6449C9}.2015_Debug|Win32.ActiveCfg = 2015_Debug|Win32
+		{C5ECF5E5-3E73-4D41-917C-8557CC6449C9}.2015_Debug|Win32.Build.0 = 2015_Debug|Win32
+		{C5ECF5E5-3E73-4D41-917C-8557CC6449C9}.2015_Release|Win32.ActiveCfg = 2015_Release|Win32
+		{C5ECF5E5-3E73-4D41-917C-8557CC6449C9}.2015_Release|Win32.Build.0 = 2015_Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
