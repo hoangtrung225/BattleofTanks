@@ -780,13 +780,13 @@ function OnPlaceTankRequest() {
 	if (GetMyTeam() == TEAM_1) {
 		PlaceTank(TANK_HEAVY, 1, 1);
 		PlaceTank(TANK_HEAVY, 3, 8);
-		PlaceTank(TANK_HEAVY, 6, 10);
+		PlaceTank(TANK_LIGHT, 6, 10);
 		PlaceTank(TANK_HEAVY, 1, 20);
 	}
 	else if (GetMyTeam() == TEAM_2) {
-		PlaceTank(TANK_HEAVY, 16, 4);
+		PlaceTank(TANK_HEAVY, 17, 1);
 		PlaceTank(TANK_HEAVY, 17, 6);
-		PlaceTank(TANK_HEAVY, 17, 15);
+		PlaceTank(TANK_LIGHT, 17, 15);
 		PlaceTank(TANK_HEAVY, 20, 20);
 	}
 
@@ -806,10 +806,14 @@ function OnPlaceTankRequest() {
 function GetTankDirection (tankid) {
   var ReturnDirections = [];
 	var TANK = GetMyTank(tankid);
-  if (GetTileAt(Math.floor(TANK.m_x - 1), Math.floor(TANK.m_y)) == BLOCK_GROUND ) ReturnDirections.push(DIRECTION_LEFT);
-  if (GetTileAt(Math.floor(TANK.m_x), Math.floor(TANK.m_y-1)) == BLOCK_GROUND ) ReturnDirections.push(DIRECTION_UP);
-  if (GetTileAt(Math.floor(TANK.m_x+1), Math.floor(TANK.m_y)) == BLOCK_GROUND ) ReturnDirections.push(DIRECTION_RIGHT);
-  if (GetTileAt(Math.floor(TANK.m_x), Math.floor(TANK.m_y+1)) == BLOCK_GROUND ) ReturnDirections.push(DIRECTION_DOWN);
+  if (GetTileAt(Math.round(TANK.m_x - 1), Math.round(TANK.m_y)) == BLOCK_GROUND &&
+	GetTileAt(Math.floor(TANK.m_x - 1), Math.floor(TANK.m_y)) == BLOCK_GROUND) ReturnDirections.push(DIRECTION_LEFT);
+  if (GetTileAt(Math.round(TANK.m_x), Math.round(TANK.m_y-1)) == BLOCK_GROUND &&
+	GetTileAt(Math.floor(TANK.m_x), Math.floor(TANK.m_y-1)) == BLOCK_GROUND) ReturnDirections.push(DIRECTION_UP);
+  if (GetTileAt(Math.round(TANK.m_x+1), Math.round(TANK.m_y)) == BLOCK_GROUND &&
+	GetTileAt(Math.floor(TANK.m_x+1), Math.floor(TANK.m_y)) == BLOCK_GROUND) ReturnDirections.push(DIRECTION_RIGHT);
+  if (GetTileAt(Math.round(TANK.m_x), Math.round(TANK.m_y+1)) == BLOCK_GROUND &&
+	GetTileAt(Math.floor(TANK.m_x), Math.floor(TANK.m_y+1)) == BLOCK_GROUND) ReturnDirections.push(DIRECTION_DOWN);
   return ReturnDirections;
 }
 
@@ -826,37 +830,46 @@ function TagetTanks (TANK) {
   return TagetTankReturn;
 }
 
+
+var UP_DOWN = 0;
+var LEFT_RIGHT = 1;
 function ClearShot(Source_x, Source_y, Destine_x, Destine_y ){
 	var FlooredGetTile;
 	if (Source_x - 1 < Destine_x && Destine_x < Source_x + 1){
 		if (Source_y < Destine_y){
 			for(var y = Source_y; y < Destine_y; y++){
-				FlooredGetTile = GetTileAt(Math.floor(Source_x), Math.floor(y));
-				if ((FlooredGetTile == BLOCK_HARD_OBSTACLE) || (FlooredGetTile == BLOCK_BASE)) return Source_x, y;
+				FlooredGetTile = GetTileAt(Math.round(Source_x), Math.round(y));
+				if ((FlooredGetTile == BLOCK_HARD_OBSTACLE) || (FlooredGetTile == BLOCK_BASE) || (FlooredGetTile == BLOCK_SOFT_OBSTACLE))
+					return [FlooredGetTile, UP_DOWN];
 			}
-			return "Up_Down";
+			return UP_DOWN;
 		}
 		else {
 			for(var y = Destine_y; y < Source_y; y++){
-				if ((FlooredGetTile == BLOCK_HARD_OBSTACLE) || (FlooredGetTile == BLOCK_BASE)) return Source_x, y;
+				FlooredGetTile = GetTileAt(Math.round(Source_x), Math.round(y));
+				if ((FlooredGetTile == BLOCK_HARD_OBSTACLE) || (FlooredGetTile == BLOCK_BASE) || (FlooredGetTile == BLOCK_SOFT_OBSTACLE))
+					return [FlooredGetTile, UP_DOWN];
 			}
-			return "Up_Down";
+			return UP_DOWN;
 		}
 	}
 	if (Source_y - 1 < Destine_y && Destine_y < Source_y + 1){
 		if (Source_x < Destine_x){
 			for(var x = Source_x; x < Destine_x; x++){
-				console.log("gettileat"+x+Source_y+FlooredGetTile);
-				FlooredGetTile = GetTileAt(Math.floor(x), Math.floor(Source_y));
-				if ((FlooredGetTile == BLOCK_HARD_OBSTACLE) || (FlooredGetTile == BLOCK_BASE)) return x, Source_y;
+				FlooredGetTile = GetTileAt(Math.round(x), Math.round(Source_y));
+				console.log("gettileat"+ "x" +x+ "y"+Source_y+"title"+FlooredGetTile);
+				if ((FlooredGetTile == BLOCK_HARD_OBSTACLE) || (FlooredGetTile == BLOCK_BASE) || (FlooredGetTile == BLOCK_SOFT_OBSTACLE))
+					return [FlooredGetTile, LEFT_RIGHT];
 			}
-			return "Left_Right"
+			return LEFT_RIGHT
 		}
 		else {
 			for(var x = Destine_x; x < Source_x; x++){
-				if ((FlooredGetTile == BLOCK_HARD_OBSTACLE || FlooredGetTile == BLOCK_BASE)) return x, Source_y;
+				FlooredGetTile = GetTileAt(Math.round(x), Math.round(Source_y));
+				if ((FlooredGetTile == BLOCK_HARD_OBSTACLE || FlooredGetTile == BLOCK_BASE) || (FlooredGetTile == BLOCK_SOFT_OBSTACLE))
+					return [FlooredGetTile, LEFT_RIGHT];
 			}
-			return "Left_Right";
+			return LEFT_RIGHT;
 		}
 	}
 }
@@ -873,10 +886,10 @@ function TankMarch(){
 
 function Navigate(Current_x, Current_y, Taget_x, Taget_y){
   ReturnDirection = {}
-  if (Current_x < Taget_x) ReturnDirection["Left_Right"] = DIRECTION_RIGHT;
-  else ReturnDirection["Left_Right"] = DIRECTION_LEFT;
-  if (Current_y < Taget_y) ReturnDirection["Up_Down"] = DIRECTION_DOWN;
-  else ReturnDirection["Up_Down"] = DIRECTION_UP;
+  if (Current_x < Taget_x) ReturnDirection[LEFT_RIGHT] = DIRECTION_RIGHT;
+  else ReturnDirection[LEFT_RIGHT] = DIRECTION_LEFT;
+  if (Current_y < Taget_y) ReturnDirection[UP_DOWN] = DIRECTION_DOWN;
+  else ReturnDirection[UP_DOWN] = DIRECTION_UP;
   return ReturnDirection;
 }
 
@@ -958,24 +971,24 @@ function SeekDestroy(MyTankIndex){
 		tempEnemyTank = GetEnemyTank(i);
 		if((tempEnemyTank == null) ||(tempEnemyTank.m_HP == 0))
 			continue;
-		if(Navigate(tempTank.m_x, tempTank.m_y, tempEnemyTank.m_x, tempEnemyTank.m_y)["Up_Down"] == DIRECTION_UP)
+		if(Navigate(tempTank.m_x, tempTank.m_y, tempEnemyTank.m_x, tempEnemyTank.m_y)[UP_DOWN] == DIRECTION_UP)
 			ReturnMove[DIRECTION_UP]++;
-		if(Navigate(tempTank.m_x, tempTank.m_y, tempEnemyTank.m_x, tempEnemyTank.m_y)["Up_Down"] == DIRECTION_DOWN)
+		if(Navigate(tempTank.m_x, tempTank.m_y, tempEnemyTank.m_x, tempEnemyTank.m_y)[UP_DOWN] == DIRECTION_DOWN)
 			ReturnMove[DIRECTION_DOWN]++;
-		if(Navigate(tempTank.m_x, tempTank.m_y, tempEnemyTank.m_x, tempEnemyTank.m_y)["Left_Right"] == DIRECTION_LEFT)
+		if(Navigate(tempTank.m_x, tempTank.m_y, tempEnemyTank.m_x, tempEnemyTank.m_y)[LEFT_RIGHT] == DIRECTION_LEFT)
 			ReturnMove[DIRECTION_LEFT]++;
-		if(Navigate(tempTank.m_x, tempTank.m_y, tempEnemyTank.m_x, tempEnemyTank.m_y)["Left_Right"] == DIRECTION_RIGHT)
+		if(Navigate(tempTank.m_x, tempTank.m_y, tempEnemyTank.m_x, tempEnemyTank.m_y)[LEFT_RIGHT] == DIRECTION_RIGHT)
 			ReturnMove[DIRECTION_RIGHT]++;
 		}
 		var PowerUp = GetPowerUpList();
 		for(var i = 0;i < PowerUp.length; i++){
-			if(Navigate(tempTank.m_x, tempTank.m_y, PowerUp.m_x, PowerUp.m_y)["Up_Down"] == DIRECTION_UP)
+			if(Navigate(tempTank.m_x, tempTank.m_y, PowerUp.m_x, PowerUp.m_y)[UP_DOWN] == DIRECTION_UP)
 				ReturnMove[DIRECTION_UP]++;
-			if(Navigate(tempTank.m_x, tempTank.m_y, PowerUp.m_x, PowerUp.m_y)["Up_Down"] == DIRECTION_DOWN)
+			if(Navigate(tempTank.m_x, tempTank.m_y, PowerUp.m_x, PowerUp.m_y)[UP_DOWN] == DIRECTION_DOWN)
 				ReturnMove[DIRECTION_DOWN]++;
-			if(Navigate(tempTank.m_x, tempTank.m_y, PowerUp.m_x, PowerUp.m_y)["Left_Right"] == DIRECTION_LEFT)
+			if(Navigate(tempTank.m_x, tempTank.m_y, PowerUp.m_x, PowerUp.m_y)[LEFT_RIGHT] == DIRECTION_LEFT)
 				ReturnMove[DIRECTION_LEFT]++;
-			if(Navigate(tempTank.m_x, tempTank.m_y, PowerUp.m_x, PowerUp.m_y)["Left_Right"] == DIRECTION_RIGHT)
+			if(Navigate(tempTank.m_x, tempTank.m_y, PowerUp.m_x, PowerUp.m_y)[LEFT_RIGHT] == DIRECTION_RIGHT)
 				ReturnMove[DIRECTION_RIGHT]++;
 		}
 		var returnarray = [];
@@ -994,6 +1007,7 @@ function FoundCommon(array1, array2){
 	var arrayreturn = [];
 	for (var i = 0; i < array1.length; i++){
 		for( var j = 0; j < array2.length; j++){
+
 			if (array1[i] == array2[j]) arrayreturn.push(array1[i]);
 		}
 	}
@@ -1005,6 +1019,7 @@ function VerboseDirection(DirectionId){
 	if(DirectionId == 2) return "DIRECTION_RIGHT";
 	if(DirectionId == 3) return "DIRECTION_DOWN";
 	if(DirectionId == 4) return "DIRECTION_LEFT";
+	if(DirectionId == null) return "Go Forth";
 }
 
 
@@ -1024,48 +1039,69 @@ function LockOn (MyTankId){
 			console.log("Tank " + MyTankId  + " In LOCK on Enemy Tank" + j);
 			enemytank = TagetTanks(tempTank)[j];
 			var IsClearShot = ClearShot(tempTank.m_x, tempTank.m_y, enemytank.m_x, enemytank.m_y);
-			if ( IsClearShot != "Up_Down" && IsClearShot != "Left_Right"){
-				console.log("it is not clear! i repeat it is not clear cease fireeeee" + IsClearShot);
-				continue;
+			var tempNavigate = Navigate(tempTank.m_x, tempTank.m_y, enemytank.m_x, enemytank.m_y);
+			if ( IsClearShot != UP_DOWN && IsClearShot != LEFT_RIGHT){
+				if( j == TagetTanks(tempTank).length -1){
+					if(ClearShot[0] == BLOCK_SOFT_OBSTACLE){
+						returncommand["direction"] = tempNavigate[IsClearShot[1]];
+						returncommand["shot"] = true;
+						break;
+					}
+					else{
+						if (!InArray(returncommand["direction"], GetTankDirection(MyTankId)))
+							returncommand["direction"] = TankFindAWay(MyTankId)[0];
+							console.log("LOCKON else lopp calling TANKFINDAWAY");
+							break;
+					}
+
+				}
+				else continue;
 			 }
-			else if (IsClearShot == "Up_Down") {
+			else if (IsClearShot == UP_DOWN) {
 				if (tempTank.m_coolDown == 0){
-					returncommand["direction"] = Navigate(tempTank.m_x, tempTank.m_y, enemytank.m_x, enemytank.m_y)["Up_Down"];
+					returncommand["direction"] = tempNavigate[UP_DOWN];
 					returncommand["shot"] = true;
-					console.log("tank " + i+" shut ting at UpDOWN" + IsClearShot);
 					break;
 				}
 				if (tempTank.m_coolDown > 0) {
-					returncommand["direction"] = Navigate(tempTank.m_x, tempTank.m_y, enemytank.m_x, enemytank.m_y)["Left_Right"];
-					if(enemytank.m_disabled == true ||(enemytank.m_coolDown > 0 && enemytank.m_direction != Opposite(Navigate(tempTank.m_x, tempTank.m_y, enemytank.m_x, enemytank.m_y)["Up_Down"])))
+					returncommand["direction"] = tempNavigate[LEFT_RIGHT];
+					if(enemytank.m_disabled == true ||enemytank.m_coolDown > 0 && tempTank.m_type == TANK_HEAVY &&
+						(enemytank.m_direction != Opposite(tempNavigate[UP_DOWN])))
 					{
+						console.log("It is EMP go for the kill====================================================");
 						returncommand["shot"] = false;
 						break;
 					}
 					else {
 						returncommand["direction"] = Opposite(returncommand["direction"]);
+						if (!InArray(returncommand["direction"], GetTankDirection(MyTankId)))
+							returncommand["direction"] = TankFindAWay(MyTankId)[0];
 						returncommand["shot"] = false;
 						break;
 					}
 
 				}
 			}
-			else if (IsClearShot == "Left_Right") {
+			else if (IsClearShot == LEFT_RIGHT) {
 				if (tempTank.m_coolDown ==0){
-					returncommand["direction"] = Navigate(tempTank.m_x, tempTank.m_y, enemytank.m_x, enemytank.m_y)["Left_Right"];
+					returncommand["direction"] = tempNavigate[LEFT_RIGHT];
 					returncommand["shot"] = true;
 					console.log("tank " + i+"shutting at Left_Right" + IsClearShot);
 					break;
 				}
 				if (tempTank.m_coolDown >0){
-					returncommand["direction"] = Navigate(tempTank.m_x, tempTank.m_y, enemytank.m_x, enemytank.m_y)["Up_Down"];
-					if(enemytank.m_disabled == true ||(enemytank.m_coolDown > 0 && enemytank.m_direction != Opposite(Navigate(tempTank.m_x, tempTank.m_y, enemytank.m_x, enemytank.m_y)["Left_Right"])))
+					returncommand["direction"] = tempNavigate[UP_DOWN];
+					if(enemytank.m_disabled == true ||(enemytank.m_coolDown > 0 && tempTank.m_type == TANK_HEAVY &&
+						enemytank.m_direction != Opposite(tempNavigate[LEFT_RIGHT])))
 					{
+						console.log("It is EMP go for the kill====================================================");
 						returncommand["shot"] = false;
 						break;
 					}
 					else {
 						returncommand["direction"] = Opposite(returncommand["direction"]);
+						if (!InArray(returncommand["direction"], GetTankDirection(MyTankId)))
+							returncommand["direction"] = TankFindAWay(MyTankId)[0];
 						returncommand["shot"] = false;
 						break;
 					}
@@ -1075,6 +1111,53 @@ function LockOn (MyTankId){
 		 }
 	console.log("direction "+ returncommand["direction"] + " shot " + returncommand["shot"]);
 	return returncommand;
+}
+
+function GetMyBases(id){
+	return g_bases[g_team][id];
+}
+
+function GetEnemyBases(id){
+	return g_bases[TEAM_1+ TEAM_2 - g_team][id];
+}
+
+function StuckSolution(TankId){
+	var direction = GetMyTank(TankId).m_direction;
+	if(InArray(TankId, IsStucking()["MyStuckTanks"])){
+
+		console.log("tank i stuck in "+ IsStucking()["MyStuckTanks"]);
+		if (!InArray(direction, GetTankDirection(TankId)))
+		{
+			console.log("Tank " +TankId+ " exit way is block before getrandom direction" + VerboseDirection(direction));
+			direction = GetTankDirection(TankId)[Math.round((Math.random() * 3))];
+		}
+		else{
+			direction = FoundCommon(SeekDestroy(TankId), GetTankDirection(TankId))[Math.round((Math.random() * 3))];
+			console.log("found random direction in Stuck");
+		}
+
+	}
+	return direction;
+}
+
+function TankFindAWay(i){
+	var direction;
+	var shot;
+	if (Math.random() > 0.9){
+		direction = FoundCommon(SeekDestroy(i), GetTankDirection(i))[Math.round((Math.random() * 3))];
+		shot = false;
+		console.log("Tank "+ i +" go random" +VerboseDirection(direction));
+	}
+	else {
+			console.log("Tank "+ i+" go forth");
+			direction = GetMyTank(i).m_direction;
+			if (!InArray(direction, GetTankDirection(i)))
+				direction = FoundCommon(SeekDestroy(i), GetTankDirection(i))[Math.round((Math.random() * 3))];
+			shot = false;
+	}
+	if (direction == null) direction = GetMyTank(i).m_direction;
+	console.log("return direction: "+ direction +" return shot: "+ shot);
+	return [direction, shot];
 }
 //===========================================================================================================
 
@@ -1151,8 +1234,6 @@ function Update() {
 		}
 	}
 
-	var stuck = IsStucking();
-
 
 	// =========================================================================================================
 	// This is an example on how you command your tanks.
@@ -1164,47 +1245,21 @@ function Update() {
 		if((tempTank == null) ||(tempTank.m_HP == 0))
 			continue;
 
-		var direction = null;
+		var direction = tempTank.m_direction;
 		var shot = false;
 
 
 		if (TagetTanks(tempTank).length != 0)
 		{
 			var lockoncall = LockOn(i);
-			console.log("calling Lock ON" + lockoncall["direction"] + lockoncall["shot"]);
+			console.log("calling Lock ON direction " + lockoncall["direction"] +" shot "+ lockoncall["shot"]);
 			direction = lockoncall["direction"];
 			shot = lockoncall["shot"];
 		}
 		else {
-			direction = Opposite(GetMyTank(i).m_direction);
-			if(InArray(i, stuck["MyStuckTanks"])){
-				console.log("tank i stuck in "+ stuck["MyStuckTanks"]);
-				console.log("tank"+i+"is stucking in if " + stuck["MyStuckTanks"]);
-				if (!InArray(direction, GetTankDirection(i)))
-				{
-					console.log("Tank " +i+ " exit way is block before getrandom direction" + VerboseDirection(direction));
-					direction = GetTankDirection(i)[Math.floor((Math.random() * 3))];
-					console.log("Found common in action" + " SEEK "+SeekDestroy(i)+ " GETTANK "+GetTankDirection(i)+" FOind common "+ VerboseDirection(direction));
-				}
-				else{
-					direction = FoundCommon(SeekDestroy(i), GetTankDirection(i))[Math.floor((Math.random() * 3))];
-					console.log("Found common in action" + SeekDestroy(i)+ GetTankDirection(i)+VerboseDirection(direction));
-				}
-
-			}
-			else if (Math.random() > 0.9){
-				direction = FoundCommon(SeekDestroy(i), GetTankDirection(i))[Math.floor((Math.random() * 3))];
-				shot = false;
-				console.log("Tank "+ i +" go random" +VerboseDirection(direction));
-				console.log("seek destroy: " + SeekDestroy(i) + " Get direction " +GetTankDirection(i)) ;
-			}
-			else {
-				{
-					console.log("Tank "+ i+" go forth");
-					direction = null;//
-					shot = false;
-				}
-			}
+			direction = TankFindAWay(i)[0];
+			shot = TankFindAWay(i)[1];
+			console.log("tankfind a way: " + TankFindAWay(i));
 		}
 
 		console.log("tank "+i+" final destination"+ VerboseDirection(direction));
