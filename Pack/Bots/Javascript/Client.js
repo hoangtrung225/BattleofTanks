@@ -129,7 +129,7 @@ var EncodeUInt16 = function (number) {
 var EncodeFloat32 = function (number) {
 	var arr  = new Float32Array(1);
 	var char = new Uint8Array(arr.buffer);
-	
+
 	arr[0] = number;
 	return String.fromCharCode(char[0], char[1], char[2], char[3]);
 };
@@ -142,7 +142,7 @@ var DecodeInt8 = function (string, offset) {
 var DecodeInt16 = function (string, offset) {
 	var arr  = new Int16Array(1);
 	var char = new Int8Array(arr.buffer);
-	
+
 	for (var i=0; i<2; ++i) {
 		char[i] = string.charCodeAt(offset + i);
 	}
@@ -154,7 +154,7 @@ var DecodeUInt8 = function (string, offset) {
 var DecodeUInt16 = function (string, offset) {
 	var arr  = new Uint16Array(1);
 	var char = new Uint8Array(arr.buffer);
-	
+
 	for (var i=0; i<2; ++i) {
 		char[i] = string.charCodeAt(offset + i);
 	}
@@ -163,7 +163,7 @@ var DecodeUInt16 = function (string, offset) {
 var DecodeFloat32 = function (string, offset) {
 	var arr  = new Float32Array(1);
 	var char = new Uint8Array(arr.buffer);
-	
+
 	for (var i=0; i<4; ++i) {
 		char[i] = string.charCodeAt(offset + i);
 	}
@@ -247,7 +247,7 @@ var g_powerUps = new Array();
 var g_strikes = new Array();
 	g_strikes[TEAM_1] = new Array();
 	g_strikes[TEAM_2] = new Array();
-	
+
 var g_matchResult;
 var g_inventory = new Array();
 	g_inventory[TEAM_1] = new Array();
@@ -315,20 +315,20 @@ function Send(data) {
 }
 function OnMessage(data) {
 	// console.log ("Data received: " + PacketToString(data));
-	
+
 	var readOffset = 0;
-	
+
 	while (true) {
-		var command = DecodeUInt8 (data, readOffset); 
+		var command = DecodeUInt8 (data, readOffset);
 		readOffset++;
-		
+
 		if (command == COMMAND_SEND_TEAM) {
 			g_team = DecodeUInt8 (data, readOffset); readOffset ++;
 		}
 		else if (command == COMMAND_UPDATE_STATE) {
 			state = DecodeUInt8 (data, readOffset);
 			readOffset++;
-			
+
 			if (g_state == STATE_WAITING_FOR_PLAYERS && state == STATE_TANK_PLACEMENT) {
 				g_state = state;
 				setTimeout(OnPlaceTankRequest, 100);
@@ -340,7 +340,7 @@ function OnMessage(data) {
 				for (var j=0; j<MAP_H; j++) {
 					g_map[j * MAP_W + i] = DecodeUInt8 (data, readOffset);
 					readOffset += 1;
-					
+
 					if (g_map[j * MAP_W + i] == BLOCK_HARD_OBSTACLE) {
 						var temp = new Obstacle();
 						temp.m_id = -1;
@@ -382,12 +382,12 @@ function OnMessage(data) {
 		}
 		else if (command == COMMAND_REQUEST_CONTROL) {
 			Update();
-		}		
+		}
 		else {
 			readOffset ++;
 			logger.print ("Invalid command id: " + command)
 		}
-		
+
 		if (readOffset >= data.length) {
 			break;
 		}
@@ -410,7 +410,7 @@ function ProcessUpdateObstacleCommand (data, originalOffset) {
 	var x = DecodeUInt8 (data, offset); offset++;
 	var y = DecodeUInt8 (data, offset); offset++;
 	var HP = DecodeUInt8 (data, offset); offset++;
-	
+
 	if (g_obstacles[id] == null) {
 		g_obstacles[id] = new Obstacle();
 	}
@@ -418,7 +418,7 @@ function ProcessUpdateObstacleCommand (data, originalOffset) {
 	g_obstacles[id].m_x = x;
 	g_obstacles[id].m_y = y;
 	g_obstacles[id].m_HP = HP;
-	
+
 	return offset - originalOffset;
 }
 
@@ -436,7 +436,7 @@ function ProcessUpdateTankCommand (data, originalOffset) {
 	var disabled = DecodeUInt8 (data, offset); offset++;
 	var x = DecodeFloat32 (data, offset); offset+=4;
 	var y = DecodeFloat32 (data, offset); offset+=4;
-	
+
 	if (g_tanks[team][id] == null) {
 		g_tanks[team][id] = new Tank();
 	}
@@ -452,7 +452,7 @@ function ProcessUpdateTankCommand (data, originalOffset) {
 	g_tanks[team][id].m_disabled = disabled;
 	g_tanks[team][id].m_x = x;
 	g_tanks[team][id].m_y = y;
-	
+
 	return offset - originalOffset;
 }
 function ProcessUpdateBulletCommand (data, originalOffset) {
@@ -464,10 +464,10 @@ function ProcessUpdateBulletCommand (data, originalOffset) {
 	var dir = DecodeUInt8 (data, offset); offset++;
 	var speed = DecodeFloat32 (data, offset); offset+=4;
 	var damage = DecodeUInt8 (data, offset); offset++;
-	var hit = DecodeUInt8 (data, offset); offset++; // not used 
+	var hit = DecodeUInt8 (data, offset); offset++; // not used
 	var x = DecodeFloat32 (data, offset); offset+=4;
 	var y = DecodeFloat32 (data, offset); offset+=4;
-	
+
 	if (g_bullets[team][id] == null) {
 		g_bullets[team][id] = new Bullet();
 	}
@@ -480,7 +480,7 @@ function ProcessUpdateBulletCommand (data, originalOffset) {
 	g_bullets[team][id].m_damage = damage;
 	g_bullets[team][id].m_x = x;
 	g_bullets[team][id].m_y = y;
-	
+
 	return offset - originalOffset;
 }
 
@@ -491,7 +491,7 @@ function ProcessUpdatePowerUpCommand (data, originalOffset) {
 	var type = DecodeUInt8 (data, offset); offset++;
 	var x = DecodeFloat32 (data, offset); offset+=4;
 	var y = DecodeFloat32 (data, offset); offset+=4;
-	
+
 	if (g_powerUps[id] == null) {
 		g_powerUps[id] = new PowerUp();
 	}
@@ -500,8 +500,8 @@ function ProcessUpdatePowerUpCommand (data, originalOffset) {
 	g_powerUps[id].m_type = type;
 	g_powerUps[id].m_x = x;
 	g_powerUps[id].m_y = y;
-	
-	return offset - originalOffset;	
+
+	return offset - originalOffset;
 }
 
 function ProcessUpdateBaseCommand (data, originalOffset) {
@@ -512,7 +512,7 @@ function ProcessUpdateBaseCommand (data, originalOffset) {
 	var HP = DecodeUInt16 (data, offset); offset+=2;
 	var x = DecodeFloat32 (data, offset); offset+=4;
 	var y = DecodeFloat32 (data, offset); offset+=4;
-	
+
 	if (g_bases[team][id] == null) {
 		g_bases[team][id] = new Base();
 	}
@@ -522,7 +522,7 @@ function ProcessUpdateBaseCommand (data, originalOffset) {
 	g_bases[team][id].m_HP = HP;
 	g_bases[team][id].m_x = x;
 	g_bases[team][id].m_y = y;
-	
+
 	return offset - originalOffset;
 }
 
@@ -539,7 +539,7 @@ function ProcessUpdateInventoryCommand (data, originalOffset) {
 	for (var i=0; i<number2; i++) {
 		g_inventory[TEAM_2][i] = DecodeUInt8 (data, offset); offset++;
 	}
-	
+
 	return offset - originalOffset;
 }
 
@@ -552,7 +552,7 @@ function ProcessUpdateStrikeCommand(data, originalOffset) {
 	var countDown = DecodeUInt8 (data, offset);	offset++;
 	var x = DecodeFloat32 (data, offset); 		offset+=4;
 	var y = DecodeFloat32 (data, offset); 		offset+=4;
-	
+
 	if (g_strikes[team][id] == null) {
 		g_strikes[team][id] = new Strike();
 	}
@@ -563,7 +563,7 @@ function ProcessUpdateStrikeCommand(data, originalOffset) {
 	g_strikes[team][id].m_countDown = countDown;
 	g_strikes[team][id].m_x = x;
 	g_strikes[team][id].m_y = y;
-	
+
 	return offset - originalOffset;
 }
 
@@ -571,7 +571,7 @@ function ProcessMatchResultCommand(data, originalOffset) {
 	var offset = originalOffset;
 	g_matchResult = DecodeUInt8 (data, offset); offset++;
 	g_state = STATE_FINISHED; //update state for safety, server should also send a msg update state
-	
+
 	return offset - originalOffset;
 }
 
@@ -624,7 +624,7 @@ var g_commandToBeSent = "";
 //     * If 1 team can destroy any base, they are the winner.                       //
 //     * After Sudden Death mode is over, the team has more tanks remaining is the  //
 //     winner.                                                                      //
-//   + The time is over. If it’s an active game (i.e. Some tanks and/or bases are   // 
+//   + The time is over. If it’s an active game (i.e. Some tanks and/or bases are   //
 //   destroyed), the result is a DRAW. If nothing is destroyed, it’s a BAD_DRAW.    //
 //                                                                                  //
 // Please read the detailed rule on our web site at:                                //
@@ -639,7 +639,7 @@ var g_commandToBeSent = "";
 // Further more, if you cause any damage to the server or
 // wrong match result, you'll be disqualified right away.
 //
-// 
+//
 //
 // That's pretty much about it. Now, let's start coding.
 // ====================================================================================
@@ -681,7 +681,7 @@ function CommandTank (id, turn, move, shoot) {
 	else {
 		clientCommands[id].m_direction = g_tanks[g_team][id].m_direction;
 	}
-	
+
 	clientCommands[id].m_move = move;
 	clientCommands[id].m_shoot = shoot;
 	clientCommands[id].m_dirty = true;
@@ -721,7 +721,7 @@ function SendCommand () {
 			g_commandToBeSent += EncodeUInt8(clientCommands[i].m_direction);
 			g_commandToBeSent += EncodeUInt8(clientCommands[i].m_move);
 			g_commandToBeSent += EncodeUInt8(clientCommands[i].m_shoot);
-			
+
 			clientCommands.m_dirty = false;
 		}
 	}
@@ -740,7 +740,7 @@ function GetTileAt(x, y) {
 	// BLOCK_HARD_OBSTACLE
 	// BLOCK_SOFT_OBSTACLE
 	// BLOCK_BASE
-	
+
 	return g_map[y * MAP_W + x];
 }
 function GetObstacleList() {
@@ -787,7 +787,7 @@ function GetPowerUpList() {
 			powerUp.push (g_powerUps[i]);
 		}
 	}
-	
+
 	return powerUp;
 }
 
@@ -813,7 +813,7 @@ function HasEMP() {
 
 function GetIncomingStrike() {
 	var incoming = [];
-	
+
 	for (var i=0; i<g_strikes[TEAM_1].length; i++) {
 		if (g_strikes[TEAM_1][i].m_live) {
 			incoming.push (g_strikes[TEAM_1][i]);
@@ -824,7 +824,7 @@ function GetIncomingStrike() {
 			incoming.push (g_strikes[TEAM_2][i]);
 		}
 	}
-	
+
 	return incoming;
 }
 
@@ -846,12 +846,61 @@ function OnPlaceTankRequest() {
 		PlaceTank(TANK_HEAVY, 17, 13);
 		PlaceTank(TANK_HEAVY, 16, 19);
 	}
-	
+
 	// Leave this here, don't remove it.
 	// This command will send all of your tank command to server
 	SendCommand();
 }
+function InArray(Element, Array){
+		for(Unit in Array){
+			if (Element == Array[Unit])
+				return true;
+		}
+		return false;
+	}
 
+	function GetMyNeighbor(Tile_x, Tile_y){
+		Tile_x = Math.round(Tile_x);
+		Tile_y = Math.round(Tile_y);
+		var Directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+		var result = [];
+		var direction
+		for (dir in Directions){
+			direction = [Tile_x+Directions[dir][0], Tile_y+Directions[dir][1]];
+			result.push(direction);
+		}
+		return result;
+	}
+
+
+
+var MYMAP = (function(){
+	var Map = [];
+	for(var i = 0; i < 20; i++){
+		for (var j = 0; j < 20; j++){
+				Map.push([i +1, j +1]);
+		}
+	}
+	return Map
+})();
+
+
+	function MakeMyMove(Source_x, Source_y, Destine_x, Destine_y){
+		//make array of map coordination
+		var Source_x = Math.floor(Source_x);
+		var Source_y = Math.floor(Source_y);
+		var Destine_x = Math.floor(Destine_x);
+		var Destine_y = Math.floor(Destine_y);
+
+		var PathSequence = [];
+		var Fronties = [];
+		var Map = MYMAP.slice(0);
+		PathSequence.push([Source_x, Source_y, 0]);
+		
+		// let get going
+	}
+
+//=============================================================================================================
 function Update() {
 	// =========================================================================================================
 	// Do nothing if the match is ended
@@ -869,14 +918,14 @@ function Update() {
 		}
 		return;
 	}
-	
-	
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
+
+
 	// =========================================================================================================
 	// Check if there will be any airstrike or EMP
 	// The GetIncomingStrike() function will return an array of strike object. Both called by your team
@@ -888,7 +937,7 @@ function Update() {
 		var y = strike[i].m_y;
 		var count = strike[i].m_countDown; // Delay (in server loop) before the strike reach the battlefield.
 		var type = strike[i].m_type;
-		
+
 		if (type == POWERUP_AIRSTRIKE) {
 			// You may want to do something here, like moving your tank away if the strike is on top of your tank.
 		}
@@ -896,11 +945,11 @@ function Update() {
 			// Run... RUN!!!!
 		}
 	}
-	
-	
-	
-	
-	
+
+
+
+
+
 	// =========================================================================================================
 	// Get power up list on the map. You may want to move your tank there and secure it before your enemy
 	// does it. You can get coordination, and type from this object
@@ -914,12 +963,12 @@ function Update() {
 			// You may want to move your tank to this position to secure this power up.
 		}
 		else if (type == POWERUP_EMP) {
-			
+
 		}
 	}
-	
-	
-	
+
+
+
 	// =========================================================================================================
 	// This is an example on how you command your tanks.
 	// In this example, I go through all of my "still intact" tanks, and give them random commands.
@@ -930,7 +979,6 @@ function Update() {
 		// Don't waste effort if tank was dead
 		if((tempTank == null) ||(tempTank.m_HP == 0))
 			continue;
-		
 		// Run randomly and fire as soon as cooldown finish.
 		// You may want a more ... intelligent algorithm here.
 		if (Math.random() > 0.9) {
@@ -941,10 +989,10 @@ function Update() {
 			CommandTank (i, null, true, true); // Keep the old direction, keep on moving and firing.
 		}
 	}
-	
-	
-	
-	
+
+
+
+
 	// =========================================================================================================
 	// This is an example on how you use your power up if you acquire one.
 	// If you have airstrike or EMP, you may use them anytime.
@@ -966,7 +1014,7 @@ function Update() {
 			}
 		}
 	}
-	
+
 	// Leave this here, don't remove it.
 	// This command will send all of your tank command to server
 	SendCommand();
