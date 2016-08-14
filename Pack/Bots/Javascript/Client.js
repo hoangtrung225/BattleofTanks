@@ -851,15 +851,26 @@ function OnPlaceTankRequest() {
 	// This command will send all of your tank command to server
 	SendCommand();
 }
-function InArray(Element, Array){
-		for(Unit in Array){
-			if (Element == Array[Unit])
-				return true;
-		}
-		return false;
-	}
+function isEmpty(obj) {
+  for(var i in obj) { return false; }
+  return true;
+}
 
-	function GetMyNeighbor(Tile_x, Tile_y){
+
+function InArray(Element, Array){
+	for( x in Array){
+		if (Array[x] == Element) return true;
+	}
+	return false;
+}
+
+function MapGraph(TankId){
+	this.Tank = GetMyTank(TankId);
+	this.Current_x = 0;
+	this.Current_y = 0;
+	this.Destine_x = 0;
+	this.Destine_y = 0;
+	this.GetMyNeighbor = function(Tile_x, Tile_y){
 		Tile_x = Math.round(Tile_x);
 		Tile_y = Math.round(Tile_y);
 		var Directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
@@ -874,31 +885,38 @@ function InArray(Element, Array){
 
 
 
-var MYMAP = (function(){
+	this.MYMAP = function(){
 	var Map = [];
 	for(var i = 0; i < 20; i++){
 		for (var j = 0; j < 20; j++){
 				Map.push([i +1, j +1]);
 		}
 	}
-	return Map
-})();
+	return Map;
+}
 
-
-	function MakeMyMove(Source_x, Source_y, Destine_x, Destine_y){
+var PathSequence = [];
+var Fronties = [];
+	this.MakeTankMove = function(this.Current_x, this.Current_y, this.Destine_x, this.Destine_y){
 		//make array of map coordination
-		var Source_x = Math.floor(Source_x);
-		var Source_y = Math.floor(Source_y);
-		var Destine_x = Math.floor(Destine_x);
-		var Destine_y = Math.floor(Destine_y);
+		var Source_x = Math.floor(this.Current_x);
+		var Source_y = Math.floor(this.Current_y);
+		var Destine_x = Math.floor(this.Destine_x);
+		var Destine_y = Math.floor(this.Destine_y);
 
-		var PathSequence = [];
-		var Fronties = [];
-		var Map = MYMAP.slice(0);
+
+		var Map = this.MYMAP.slice(0);
 		PathSequence.push([Source_x, Source_y, 0]);
-		
+ 		while (Map.length > 1) {
+
+ }
 		// let get going
 	}
+
+
+}
+
+var MyTankGraph = new MapGraph(0);
 
 //=============================================================================================================
 function Update() {
@@ -981,15 +999,7 @@ function Update() {
 			continue;
 		// Run randomly and fire as soon as cooldown finish.
 		// You may want a more ... intelligent algorithm here.
-		if (Math.random() > 0.9) {
-			var direction = (Math.random() * 4) >> 0;
-			CommandTank (i, direction + 1, true, true); // Turn into the direction, keep moving, and firing like there is no tomorrow
-		}
-		else {
-			CommandTank (i, null, true, true); // Keep the old direction, keep on moving and firing.
-		}
 	}
-
 
 
 
