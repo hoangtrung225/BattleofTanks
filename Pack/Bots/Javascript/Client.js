@@ -1,3 +1,6 @@
+
+
+
 // ====================================================================================
 //                                  HOW TO RUN THIS
 // ====================================================================================
@@ -869,16 +872,17 @@ function MapGraph(TankId){
 	this.Current_y = 0;
 	this.Destine_x = 0;
 	this.Destine_y = 0;
+  var Directions = [[0, -1, DIRECTION_UP], [1, 0, DIRECTION_RIGHT], [0, 1, DIRECTION_DOWN], [-1, 0, DIRECTION_LEFT]];
 	this.GetMyNeighbor = function(Tile_x, Tile_y){
 		Tile_x = Math.round(Tile_x);
 		Tile_y = Math.round(Tile_y);
-		var Directions = [[0, -1, DIRECTION_UP], [1, 0, DIRECTION_RIGHT], [0, 1, DIRECTION_DOWN], [-1, 0, DIRECTION_LEFT]];
 		var result = [];
 		var direction
 		for (dir in Directions){
 			direction = [Tile_x+Directions[dir][0], Tile_y+Directions[dir][1], Directions[dir][2]];
 			result.push(direction);
 		}
+    console.log("inside get neighbor function" + Tile_x + Tile_y);
 		return result;
 	}
 
@@ -898,6 +902,7 @@ function MapGraph(TankId){
 	var PathSequence = [];
 	var Frontier = [];
 	this.GetFrontierTile =  function(){
+    console.log("inside get Frontier")
 		var result = Frontier[0];
 		Frontier.splice(0,1);
 		return result;
@@ -911,20 +916,34 @@ function MapGraph(TankId){
 
 		var Map = this.MYMAP.slice(0);
 		PathSequence.push([Source_x, Source_y, 0]);
-
+    Frontier.push([Source_x, Source_y]);
+    console.log("inside SHedule path function");
 		while (Frontier.length > 0) {
 			var current = this.GetFrontierTile();
 			var currentNeighbor = this.GetMyNeighbor(current[0], current[1]);
-			For(i in currentNeighbor){
+			for (i in currentNeighbor){
 				var temp = currentNeighbor[i];
 				//neighbor current node is destination
 				if(temp[0] == Destine_x && temp[1] == Destine_y){
 					PathSequence.push([temp[0], temp[1], temp[2]]);
 					return PathSequence;
 				}
+        var InPath = (function(){
+          for(var i = 0; i < PathSequence.length; i++){
+            if(temp[0] == PathSequence[i][0] && temp[1] == PathSequence[i][1])
+              return true;
+            }
+            return false;
+        })();
+
+
+        if(!InPath){
+          Frontier.push([temp[0], temp[1]]);
+        }
 			}
 		}
-		// let get going
+    console.log("in schedule function");
+		return;
 	}
 
 
@@ -1014,7 +1033,12 @@ function Update() {
 		// You may want a more ... intelligent algorithm here.
 	}
 
-console.log(newmapobject);
+  newmapobject.Current_x = 1;
+  newmapobject.Current_y = 1;
+  newmapobject.Destine_x = 20;
+  newmapobject.Destine_y = 20;
+  var pathlog = newmapobject.SchedulePath();
+  console.log (pathlog);
 
 	// =========================================================================================================
 	// This is an example on how you use your power up if you acquire one.
