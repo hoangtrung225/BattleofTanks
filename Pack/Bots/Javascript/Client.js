@@ -865,7 +865,6 @@ function InArray(Element, Array){
 }
 
 function MapGraph(TankId){
-	this.Tank = GetMyTank(TankId);
 	this.Current_x = 0;
 	this.Current_y = 0;
 	this.Destine_x = 0;
@@ -873,11 +872,11 @@ function MapGraph(TankId){
 	this.GetMyNeighbor = function(Tile_x, Tile_y){
 		Tile_x = Math.round(Tile_x);
 		Tile_y = Math.round(Tile_y);
-		var Directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+		var Directions = [[0, -1, DIRECTION_UP], [1, 0, DIRECTION_RIGHT], [0, 1, DIRECTION_DOWN], [-1, 0, DIRECTION_LEFT]];
 		var result = [];
 		var direction
 		for (dir in Directions){
-			direction = [Tile_x+Directions[dir][0], Tile_y+Directions[dir][1]];
+			direction = [Tile_x+Directions[dir][0], Tile_y+Directions[dir][1], Directions[dir][2]];
 			result.push(direction);
 		}
 		return result;
@@ -885,7 +884,7 @@ function MapGraph(TankId){
 
 
 
-	this.MYMAP = function(){
+	this.MYMAP = (function(){
 	var Map = [];
 	for(var i = 0; i < 20; i++){
 		for (var j = 0; j < 20; j++){
@@ -893,30 +892,44 @@ function MapGraph(TankId){
 		}
 	}
 	return Map;
-}
+})();
 
-var PathSequence = [];
-var Fronties = [];
-	this.MakeTankMove = function(this.Current_x, this.Current_y, this.Destine_x, this.Destine_y){
+
+	var PathSequence = [];
+	var Frontier = [];
+	this.GetFrontierTile =  function(){
+		var result = Frontier[0];
+		Frontier.splice(0,1);
+		return result;
+	}
+	this.SchedulePath = function(){
 		//make array of map coordination
 		var Source_x = Math.floor(this.Current_x);
 		var Source_y = Math.floor(this.Current_y);
 		var Destine_x = Math.floor(this.Destine_x);
 		var Destine_y = Math.floor(this.Destine_y);
 
-
 		var Map = this.MYMAP.slice(0);
 		PathSequence.push([Source_x, Source_y, 0]);
- 		while (Map.length > 1) {
 
- }
+		while (Frontier.length > 0) {
+			var current = this.GetFrontierTile();
+			var currentNeighbor = this.GetMyNeighbor(current[0], current[1]);
+			For(i in currentNeighbor){
+				var temp = currentNeighbor[i];
+				//neighbor current node is destination
+				if(temp[0] == Destine_x && temp[1] == Destine_y){
+					PathSequence.push([temp[0], temp[1], temp[2]]);
+					return PathSequence;
+				}
+			}
+		}
 		// let get going
 	}
 
 
 }
-
-var MyTankGraph = new MapGraph(0);
+var newmapobject = new MapGraph(0);
 
 //=============================================================================================================
 function Update() {
@@ -1001,7 +1014,7 @@ function Update() {
 		// You may want a more ... intelligent algorithm here.
 	}
 
-
+console.log(newmapobject);
 
 	// =========================================================================================================
 	// This is an example on how you use your power up if you acquire one.
