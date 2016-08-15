@@ -880,9 +880,10 @@ function MapGraph(TankId){
 		var direction
 		for (dir in Directions){
 			direction = [Tile_x+Directions[dir][0], Tile_y+Directions[dir][1], Directions[dir][2]];
+			if(direction[0] < 1 || direction[0] > MAP_W-2 || direction[1] < 1 || direction[1] > MAP_W -2)
+				continue;
 			result.push(direction);
 		}
-    console.log("inside get neighbor function" + Tile_x + Tile_y);
 		return result;
 	}
 
@@ -892,21 +893,19 @@ function MapGraph(TankId){
 	var Map = [];
 	for(var i = 0; i < 20; i++){
 		for (var j = 0; j < 20; j++){
-				Map.push([i +1, j +1]);
+				Map.push([j +1, i +1]);
 		}
 	}
 	return Map;
 })();
 
 
-	var PathSequence = [];
 	var Frontier = [];
 	this.GetFrontierTile =  function(){
-    console.log("inside get Frontier")
-		var result = Frontier[0];
-		Frontier.splice(0,1);
+		var result = Frontier.slice(-1)[0];
 		return result;
 	}
+	var Map = this.MYMAP.slice(0);
 	this.SchedulePath = function(){
 		//make array of map coordination
 		var Source_x = Math.floor(this.Current_x);
@@ -914,36 +913,37 @@ function MapGraph(TankId){
 		var Destine_x = Math.floor(this.Destine_x);
 		var Destine_y = Math.floor(this.Destine_y);
 
-		var Map = this.MYMAP.slice(0);
-		PathSequence.push([Source_x, Source_y, 0]);
-    Frontier.push([Source_x, Source_y]);
-    console.log("inside SHedule path function");
+		Frontier.push([Source_x, Source_y, 0, (Source_y-1)*20 + Source_x-1]);
 		while (Frontier.length > 0) {
 			var current = this.GetFrontierTile();
+			console.log("current frontier: " + current +"----------------");
 			var currentNeighbor = this.GetMyNeighbor(current[0], current[1]);
 			for (i in currentNeighbor){
 				var temp = currentNeighbor[i];
+				console.log("current neighbor:" +temp +"***********");
 				//neighbor current node is destination
 				if(temp[0] == Destine_x && temp[1] == Destine_y){
-					PathSequence.push([temp[0], temp[1], temp[2]]);
-					return PathSequence;
+					Frontier.push([temp[0], temp[1], temp[2], (temp[1]-1)*20 + temp[0] - 1]);
+					var shortpath = [];
+					return Frontier;
 				}
         var InPath = (function(){
-          for(var i = 0; i < PathSequence.length; i++){
-            if(temp[0] == PathSequence[i][0] && temp[1] == PathSequence[i][1])
+          for(var i = 0; i < Frontier.length; i++){
+            if(temp[0] == Frontier[i][0] && temp[1] == Frontier[i][1])
               return true;
             }
             return false;
         })();
 
 
-        if(!InPath){
-          Frontier.push([temp[0], temp[1]]);
+        if(!InPath && Map[(temp[1]-1)*20 + temp[0]-1] != null){
+					console.log("add to frontier x: "+ temp[0] + " y: "+ temp[1] + "==============");
+          Frontier.push([temp[0], temp[1], temp[2], (temp[1]-1)*20 + temp[0] - 1]);
+					delete Map[(temp[1]-1)*20 + temp[0]-1];
         }
 			}
 		}
-    console.log("in schedule function");
-		return;
+		return "no path found";
 	}
 
 
@@ -1037,8 +1037,8 @@ function Update() {
   newmapobject.Current_y = 1;
   newmapobject.Destine_x = 20;
   newmapobject.Destine_y = 20;
-  var pathlog = newmapobject.SchedulePath();
-  console.log (pathlog);
+  var mypath = newmapobject.SchedulePath();
+	console.log(mypath);
 
 	// =========================================================================================================
 	// This is an example on how you use your power up if you acquire one.
