@@ -867,7 +867,27 @@ function InArray(Element, Array){
 	return false;
 }
 
+
+function Navigate(Current_x, Current_y, Taget_x, Taget_y){
+  ReturnDirection = {}
+  if (Current_x < Taget_x) ReturnDirection[LEFT_RIGHT] = DIRECTION_RIGHT;
+  else ReturnDirection[LEFT_RIGHT] = DIRECTION_LEFT;
+  if (Current_y < Taget_y) ReturnDirection[UP_DOWN] = DIRECTION_DOWN;
+  else ReturnDirection[UP_DOWN] = DIRECTION_UP;
+  return ReturnDirection;
+}
+
+function Opposite(DIRECTION){
+	if (DIRECTION == DIRECTION_UP) return DIRECTION_DOWN;
+	if (DIRECTION == DIRECTION_DOWN) return DIRECTION_UP;
+	if (DIRECTION == DIRECTION_LEFT) return DIRECTION_RIGHT;
+	if (DIRECTION == DIRECTION_RIGHT) return DIRECTION_LEFT;
+}
+
+
+
 function MapGraph(TankId){
+	this.TankId = TankId;
 	this.Current_x = 0;
 	this.Current_y = 0;
 	this.Destine_x = 0;
@@ -877,7 +897,7 @@ function MapGraph(TankId){
 		Tile_x = Math.round(Tile_x);
 		Tile_y = Math.round(Tile_y);
 		var result = [];
-		var direction
+		var direction;
 		for (dir in Directions){
 			direction = [Tile_x+Directions[dir][0], Tile_y+Directions[dir][1], Directions[dir][2]];
 			if(direction[0] < 1 || direction[0] > MAP_W-2 || direction[1] < 1 || direction[1] > MAP_W -2)
@@ -891,9 +911,9 @@ function MapGraph(TankId){
 
 	this.MYMAP = (function(){
 	var Map = [];
-	for(var i = 0; i < 20; i++){
-		for (var j = 0; j < 20; j++){
-				Map.push([j +1, i +1]);
+	for(var i = 0; i < MAP_H; i++){
+		for (var j = 0; j < MAP_W; j++){
+				Map.push([j , i]);
 		}
 	}
 	return Map;
@@ -901,19 +921,23 @@ function MapGraph(TankId){
 
 
 	var Frontier = [];
+	var Pathsequence = [];
 	this.GetFrontierTile =  function(){
 		var result = Frontier.slice(-1)[0];
+		Frontier.splice(-1,1);
 		return result;
 	}
-	var Map = this.MYMAP.slice(0);
+	var Map ;
+
+	this.path = [];
 	this.SchedulePath = function(){
 		//make array of map coordination
 		var Source_x = Math.floor(this.Current_x);
 		var Source_y = Math.floor(this.Current_y);
 		var Destine_x = Math.floor(this.Destine_x);
 		var Destine_y = Math.floor(this.Destine_y);
-
-		Frontier.push([Source_x, Source_y, 0, (Source_y-1)*20 + Source_x-1]);
+		Frontier.push([Source_x, Source_y]);
+		Pathsequence.push([Source_x, Source_y, 0]);
 		while (Frontier.length > 0) {
 			var current = this.GetFrontierTile();
 			console.log("current frontier: " + current +"----------------");
@@ -923,32 +947,87 @@ function MapGraph(TankId){
 				console.log("current neighbor:" +temp +"***********");
 				//neighbor current node is destination
 				if(temp[0] == Destine_x && temp[1] == Destine_y){
-					Frontier.push([temp[0], temp[1], temp[2], (temp[1]-1)*20 + temp[0] - 1]);
-					var shortpath = [];
-					return Frontier;
+					Pathsequence.push([temp[0], temp[1], temp[2]]);
+					this.path.push([temp[0], temp[1], temp[2]]);
+					var pointer = [temp[0], temp[1], temp[2]];
+					var direction, precede_x, precede_y;
+					while(pointer[0] != Source_x || pointer[1] != Source_y)
+					{
+						console.log(pointer + "source x: "+ Source_x + "y" + Source_y);
+						direction = Directions[Opposite(pointer[2])-DIRECTION_UP];
+						precede_x = pointer[0] + direction[0];
+						precede_y = pointer[1] + direction[1];
+						for (i in Pathsequence){
+							if (precede_x == Pathsequence[i][0] && precede_y == Pathsequence[i][1]){
+								pointer = Pathsequence[i];
+								console.log("pointer at" + pointer);
+								this.path.push(Pathsequence[i]);
+							}
+						}
+					}
+					return this.path;
 				}
         var InPath = (function(){
-          for(var i = 0; i < Frontier.length; i++){
-            if(temp[0] == Frontier[i][0] && temp[1] == Frontier[i][1])
+          for(var i = 0; i < Pathsequence.length; i++){
+            if(temp[0] == Pathsequence[i][0] && temp[1] == Pathsequence[i][1])
               return true;
             }
             return false;
         })();
 
 
-        if(!InPath && Map[(temp[1]-1)*20 + temp[0]-1] != null){
-					console.log("add to frontier x: "+ temp[0] + " y: "+ temp[1] + "==============");
-          Frontier.push([temp[0], temp[1], temp[2], (temp[1]-1)*20 + temp[0] - 1]);
-					delete Map[(temp[1]-1)*20 + temp[0]-1];
+        if(!InPath && Map[temp[1]*MAP_H + temp[0]] != null){
+          Frontier.push([temp[0], temp[1]]);
+					Pathsequence.push([temp[0], temp[1], temp[2]]);
+					delete Map[temp[1]*MAP_H + temp[0]];
         }
 			}
 		}
 		return "no path found";
 	}
 
+	this.MapInit = function(){
+		this.path = [];
+		Map = this.MYMAP.slice(0);
+		// clean object from Map
+		var tempObject;
+		//delete obstacles from moveable map
+		for (i in g_obstacles){
+			tempObject = g_obstacles[i];
+			delete Map[tempObject.m_y*MAP_W+tempObject.m_x];
+		}
+		//delete hard obstacle from moable map
+		for (i in g_hardObstacles){
+			tempObject = g_hardObstacles[i];
+			delete Map[tempObject.m_y*MAP_H+tempObject.m_x];
+		}
+		var tempTank;
+		for(var i = 0; i < NUMBER_OF_TANK; i++){
+			tempTank = GetMyTank(i);
+			delete Map[tempTank.m_y*MAP_H + tempTank.m_x];
+			if (tempTank.m_x != Math.floor(tempTank.m_x)) delete Map[tempTank.m_y*MAP_H + tempTank.m_x+1];
+			if (tempTank.m_y != Math.floor(tempTank.m_y)) delete Map[(tempTank.m_y+1)*MAP_H + tempTank.m_x];
+			if (tempTank.m_x != Math.floor(tempTank.m_x) && tempTank.m_y != Math.floor(tempTank.m_y))
+				delete Map[(tempTank.m_y+1)*MAP_H + tempTank.m_x+1];
+
+			tempTank = GetEnemyTank(i);
+			if (tempTank.m_x != Math.floor(tempTank.m_x)) delete Map[tempTank.m_y*MAP_H + tempTank.m_x+1];
+			if (tempTank.m_y != Math.floor(tempTank.m_y)) delete Map[(tempTank.m_y+1)*MAP_H + tempTank.m_x];
+			if (tempTank.m_x != Math.floor(tempTank.m_x) && tempTank.m_y != Math.floor(tempTank.m_y))
+				delete Map[(tempTank.m_y+1)*MAP_H + tempTank.m_x+1];
+		}
+	}
+
+	this.MoveOnPath = function(){
+		var direction;
+		if()
+
+	}
+
 
 }
 var newmapobject = new MapGraph(0);
+
 
 //=============================================================================================================
 function Update() {
@@ -1037,6 +1116,7 @@ function Update() {
   newmapobject.Current_y = 1;
   newmapobject.Destine_x = 20;
   newmapobject.Destine_y = 20;
+	newmapobject.MapInit();
   var mypath = newmapobject.SchedulePath();
 	console.log(mypath);
 
