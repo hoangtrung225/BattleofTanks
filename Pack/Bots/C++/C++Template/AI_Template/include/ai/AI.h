@@ -39,8 +39,11 @@ private:
 	/// @return No return value.
 	void SetMyTeam(int team);
 
-	/// Obstacles in the map
+	/// Soft obstacles in the map
 	std::vector<Obstacle*> m_obstacles;
+
+	/// Hard obstacles in the map
+	std::vector<Obstacle*> m_hardObstacles;
 
 	/// Tanks in the map
 	std::vector<Tank*> m_tanks[2];

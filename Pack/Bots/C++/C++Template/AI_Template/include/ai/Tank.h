@@ -14,7 +14,7 @@ private:
 	int m_type;
 	int m_HP;
 	int m_direction;
-	int m_speed;
+	float m_speed;
 	int m_rateOfFire;
 	int m_coolDown;
 	int m_damage;
@@ -22,7 +22,7 @@ private:
 
 public:
 	Tank();
-	Tank(int id, float x, float y, int team, int type, int HP, int dir, int speed, int ROF, int cooldown, int damage, bool disabled);
+	Tank(int id, float x, float y, int team, int type, int HP, int dir, float speed, int ROF, int cooldown, int damage, bool disabled);
 
 	float GetX();
 	float GetY();
@@ -30,7 +30,7 @@ public:
 	int GetType();
 	int GetHP();
 	int GetDirection();
-	int GetSpeed();
+	float GetSpeed();
 	int GetRateOfFire();
 	int GetCoolDown();
 	int GetDamage();

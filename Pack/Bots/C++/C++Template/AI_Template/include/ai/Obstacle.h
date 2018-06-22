@@ -14,7 +14,7 @@ private:
 
 public:
 	Obstacle();
-	Obstacle(int id, int x, int y, int HP);
+	Obstacle(int id, int x, int y, int HP, bool destructible);
 
 	int GetX();
 	int GetY();

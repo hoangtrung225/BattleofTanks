@@ -49,19 +49,15 @@ module.exports = function PowerUp (game, id) {
 	}
     
     this.CheckForCollision = function () {
+		var team1Number = 0;
+		var team2Number = 0;
+		
         // Check collision with any tanks.
         for (var i=0; i < game.m_tanks[Enum.TEAM_1].length; i++) {
             var tempTank = game.m_tanks[Enum.TEAM_1][i]; 
 			if (tempTank == null || tempTank.m_HP == 0) continue;
             if (Math.abs(this.m_x - tempTank.m_x) < 1 && Math.abs(this.m_y - tempTank.m_y) < 1) {
-				this.m_active = 0;
-                this.m_dirty = true;
-				this.m_x = -1;
-				this.m_y = -1;
-				
-				game.AcquirePowerup (Enum.TEAM_1, this.m_type);
-                
-                return;
+				team1Number ++;
             }
         }
 		
@@ -69,16 +65,26 @@ module.exports = function PowerUp (game, id) {
             var tempTank = game.m_tanks[Enum.TEAM_2][i]; 
 			if (tempTank == null || tempTank.m_HP == 0) continue;
             if (Math.abs(this.m_x - tempTank.m_x) < 1 && Math.abs(this.m_y - tempTank.m_y) < 1) {
-				this.m_active = 0;
-                this.m_dirty = true;
-				this.m_x = -1;
-				this.m_y = -1;
-                
-				game.AcquirePowerup (Enum.TEAM_2, this.m_type);
-				
-                return;
+				team2Number ++;
             }
-        }		
+        }
+		
+		if (team1Number > team2Number) {
+			this.m_active = 0;
+			this.m_dirty = true;
+			this.m_x = -1;
+			this.m_y = -1;
+			
+			game.AcquirePowerup (Enum.TEAM_1, this.m_type);
+		}
+		else if (team2Number > team1Number) {
+			this.m_active = 0;
+			this.m_dirty = true;
+			this.m_x = -1;
+			this.m_y = -1;
+			
+			game.AcquirePowerup (Enum.TEAM_2, this.m_type);
+		}
     }
 	
 	this.Update = function() {

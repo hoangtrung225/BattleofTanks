@@ -1,3 +1,6 @@
+
+
+
 // ====================================================================================
 //                                  HOW TO RUN THIS
 // ====================================================================================
@@ -178,7 +181,7 @@ function Obstacle() {
 	this.m_x = 0;
 	this.m_y = 0;
 	this.m_HP = 0;
-	this.m_destructible = false;
+	this.m_destructible = true;
 }
 function Base () {
 	this.m_id = 0;
@@ -233,6 +236,7 @@ var g_team = -1;
 var g_state = STATE_WAITING_FOR_PLAYERS;
 var g_map = new Array();
 var g_obstacles = new Array();
+var g_hardObstacles = new Array();
 var g_tanks = new Array();
 	g_tanks[TEAM_1] = new Array();
 	g_tanks[TEAM_2] = new Array();
@@ -334,10 +338,21 @@ function OnMessage(data) {
 			}
 		}
 		else if (command == COMMAND_UPDATE_MAP) {
+			g_hardObstacles = new Array();
 			for (var i=0; i<MAP_W; i++) {
 				for (var j=0; j<MAP_H; j++) {
 					g_map[j * MAP_W + i] = DecodeUInt8 (data, readOffset);
 					readOffset += 1;
+
+					if (g_map[j * MAP_W + i] == BLOCK_HARD_OBSTACLE) {
+						var temp = new Obstacle();
+						temp.m_id = -1;
+						temp.m_x = i;
+						temp.m_y = j;
+						temp.m_HP = 9999;
+						temp.m_destructible = false;
+						g_hardObstacles.push (temp);
+					}
 				}
 			}
 		}
@@ -463,7 +478,7 @@ function ProcessUpdateBulletCommand (data, originalOffset) {
 	g_bullets[team][id].m_live = live;
 	g_bullets[team][id].m_team = team;
 	g_bullets[team][id].m_type = type;
-	g_bullets[team][id].m_dir = dir;
+	g_bullets[team][id].m_direction = dir;
 	g_bullets[team][id].m_speed = speed;
 	g_bullets[team][id].m_damage = damage;
 	g_bullets[team][id].m_x = x;
@@ -583,7 +598,40 @@ var g_commandToBeSent = "";
 //                                    GAME RULES                                    //
 //                                                                                  //
 //////////////////////////////////////////////////////////////////////////////////////
-// - TO DO: WRITE THAT SHIT HERE                                                    //
+// - The game is played on a map of 20x20 blocks where [x,y] is referred as the     //
+// block at column x and row y.                                                     //
+// - Each team has 1 main base, 2 side bases and 4 tanks.                           //
+// - At the beginning of a game, each player will choose 4 tanks and place them     //
+// on the map (not on any bases/obstacles/tanks).                                   //
+// - The game is played in real-time mode. Each player will control 4 tanks in      //
+// order to defend their bases and at the same time, try to destroy their enemy’s   //
+// bases.                                                                           //
+// -Your tank bullets or cannon shells will pass other allied tank (not friendly    //
+// fire), but will damage your own bases, so watch where you firing.                //
+// -A destroyed tank will allow bullet to pass through it, but still not allow      //
+// other tanks to pass through.                                                     //
+// - When the game starts (and after each 30 seconds) , a random power-up will be   //
+// spawn at 1 of 3 bridges (if there are still space) at location:                  //
+// [10.5, 1.5], [10.5, 10.5], [10.5, 19.5].                                         //
+// - Power-ups are friendly-fired and have area of effect (AOE) damage. All units   //
+// near the struck location will be affected. Use them wisely.                      //
+// - The game is over when:                                                         //
+//   + The main base of 1 team is destroyed. The other team is the winner.          //
+//   + If all tanks of a team are destroyed, the other team is the winner.          //
+//   + After 120 seconds, if both main bases are not destroyed, the team with more  //
+//   side bases remaining is the winner.                                            //
+//   + If both team have the same bases remaining, the game will change to “Sudden  //
+//   Death” mode. In Sudden Death mode:                                             //
+//     * 2 teams will play for extra 30 seconds.                                    //
+//     * All destructible obstacles are removed.                                    //
+//     * If 1 team can destroy any base, they are the winner.                       //
+//     * After Sudden Death mode is over, the team has more tanks remaining is the  //
+//     winner.                                                                      //
+//   + The time is over. If it’s an active game (i.e. Some tanks and/or bases are   //
+//   destroyed), the result is a DRAW. If nothing is destroyed, it’s a BAD_DRAW.    //
+//                                                                                  //
+// Please read the detailed rule on our web site at:                                //
+//   http://han-ai-contest2016.gameloft.com                                         //
 //////////////////////////////////////////////////////////////////////////////////////
 
 // ====================================================================================
@@ -698,6 +746,18 @@ function GetTileAt(x, y) {
 
 	return g_map[y * MAP_W + x];
 }
+function GetObstacleList() {
+	// Return the obstacle list, both destructible, and the non destructible
+	// This does not return water type tile.
+	var list = [];
+	for (var i=0; i<g_obstacles.length; i++) {
+		list.push (g_obstacles);
+	}
+	for (var i=0; i<g_hardObstacles.length; i++) {
+		list.push (g_hardObstacles);
+	}
+	return list;
+}
 function GetMyTeam() {
 	// This function return your current team.
 	// It can be either TEAM_1 or TEAM_2
@@ -778,110 +838,34 @@ function OnPlaceTankRequest() {
 	// This function is called at the start of the game. You place your tank according
 	// to your strategy here.
 	if (GetMyTeam() == TEAM_1) {
-		PlaceTank(TANK_HEAVY, 1, 1);
-		PlaceTank(TANK_HEAVY, 3, 8);
-		PlaceTank(TANK_LIGHT, 6, 10);
-		PlaceTank(TANK_HEAVY, 1, 20);
+		PlaceTank(TANK_LIGHT, 5, 2);
+		PlaceTank(TANK_MEDIUM, 3, 8);
+		PlaceTank(TANK_HEAVY, 6, 10);
+		PlaceTank(TANK_LIGHT, 4, 14);
 	}
 	else if (GetMyTeam() == TEAM_2) {
-		PlaceTank(TANK_HEAVY, 17, 1);
-		PlaceTank(TANK_HEAVY, 17, 6);
-		PlaceTank(TANK_LIGHT, 17, 15);
-		PlaceTank(TANK_HEAVY, 20, 20);
+		PlaceTank(TANK_LIGHT, 16, 4);
+		PlaceTank(TANK_MEDIUM, 17, 8);
+		PlaceTank(TANK_HEAVY, 17, 13);
+		PlaceTank(TANK_HEAVY, 16, 19);
 	}
 
 	// Leave this here, don't remove it.
 	// This command will send all of your tank command to server
 	SendCommand();
 }
-
-
-
-
-
-
-
-// MY function
-//===========================================================================================================
-function GetTankDirection (tankid) {
-  var ReturnDirections = [];
-	var TANK = GetMyTank(tankid);
-  if (GetTileAt(Math.round(TANK.m_x - 1), Math.round(TANK.m_y)) == BLOCK_GROUND &&
-	GetTileAt(Math.floor(TANK.m_x - 1), Math.floor(TANK.m_y)) == BLOCK_GROUND) ReturnDirections.push(DIRECTION_LEFT);
-  if (GetTileAt(Math.round(TANK.m_x), Math.round(TANK.m_y-1)) == BLOCK_GROUND &&
-	GetTileAt(Math.floor(TANK.m_x), Math.floor(TANK.m_y-1)) == BLOCK_GROUND) ReturnDirections.push(DIRECTION_UP);
-  if (GetTileAt(Math.round(TANK.m_x+1), Math.round(TANK.m_y)) == BLOCK_GROUND &&
-	GetTileAt(Math.floor(TANK.m_x+1), Math.floor(TANK.m_y)) == BLOCK_GROUND) ReturnDirections.push(DIRECTION_RIGHT);
-  if (GetTileAt(Math.round(TANK.m_x), Math.round(TANK.m_y+1)) == BLOCK_GROUND &&
-	GetTileAt(Math.floor(TANK.m_x), Math.floor(TANK.m_y+1)) == BLOCK_GROUND) ReturnDirections.push(DIRECTION_DOWN);
-  return ReturnDirections;
+function isEmpty(obj) {
+  for(var i in obj) { return false; }
+  return true;
 }
 
 
-function TagetTanks (TANK) {
-	var TagetTankReturn = [];
-  for (var i = 0; i < NUMBER_OF_TANK; i++){
-    var TempTaget = GetEnemyTank(i);
-    if (TempTaget == null || TempTaget.m_HP == 0)
-      continue;
-    if ((TempTaget.m_x-1 < TANK.m_x && TANK.m_x < TempTaget.m_x+1 ) || (TempTaget.m_y-1 < TANK.m_y && TANK.m_y <TempTaget.m_y+1))
-      TagetTankReturn.push(TempTaget);
-  }
-  return TagetTankReturn;
-}
-
-
-var UP_DOWN = 0;
-var LEFT_RIGHT = 1;
-function ClearShot(Source_x, Source_y, Destine_x, Destine_y ){
-	var FlooredGetTile;
-	if (Source_x - 1 < Destine_x && Destine_x < Source_x + 1){
-		if (Source_y < Destine_y){
-			for(var y = Source_y; y < Destine_y; y++){
-				FlooredGetTile = GetTileAt(Math.round(Source_x), Math.round(y));
-				if ((FlooredGetTile == BLOCK_HARD_OBSTACLE) || (FlooredGetTile == BLOCK_BASE) || (FlooredGetTile == BLOCK_SOFT_OBSTACLE))
-					return [FlooredGetTile, UP_DOWN];
-			}
-			return UP_DOWN;
-		}
-		else {
-			for(var y = Destine_y; y < Source_y; y++){
-				FlooredGetTile = GetTileAt(Math.round(Source_x), Math.round(y));
-				if ((FlooredGetTile == BLOCK_HARD_OBSTACLE) || (FlooredGetTile == BLOCK_BASE) || (FlooredGetTile == BLOCK_SOFT_OBSTACLE))
-					return [FlooredGetTile, UP_DOWN];
-			}
-			return UP_DOWN;
-		}
+function InArray(Element, Array){
+	for( x in Array){
+		if (Array[x] == Element) return true;
 	}
-	if (Source_y - 1 < Destine_y && Destine_y < Source_y + 1){
-		if (Source_x < Destine_x){
-			for(var x = Source_x; x < Destine_x; x++){
-				FlooredGetTile = GetTileAt(Math.round(x), Math.round(Source_y));
-				console.log("gettileat"+ "x" +x+ "y"+Source_y+"title"+FlooredGetTile);
-				if ((FlooredGetTile == BLOCK_HARD_OBSTACLE) || (FlooredGetTile == BLOCK_BASE) || (FlooredGetTile == BLOCK_SOFT_OBSTACLE))
-					return [FlooredGetTile, LEFT_RIGHT];
-			}
-			return LEFT_RIGHT
-		}
-		else {
-			for(var x = Destine_x; x < Source_x; x++){
-				FlooredGetTile = GetTileAt(Math.round(x), Math.round(Source_y));
-				if ((FlooredGetTile == BLOCK_HARD_OBSTACLE || FlooredGetTile == BLOCK_BASE) || (FlooredGetTile == BLOCK_SOFT_OBSTACLE))
-					return [FlooredGetTile, LEFT_RIGHT];
-			}
-			return LEFT_RIGHT;
-		}
-	}
+	return false;
 }
-
-
-function TankMarch(){
-  if (GetMyTeam() == TEAM_1)
-    return DIRECTION_RIGHT;
-  else if (GetMyTeam() == TEAM_2)
-    return DIRECTION_LEFT
-  }
-
 
 
 function Navigate(Current_x, Current_y, Taget_x, Taget_y){
@@ -899,277 +883,155 @@ function Opposite(DIRECTION){
 	if (DIRECTION == DIRECTION_LEFT) return DIRECTION_RIGHT;
 	if (DIRECTION == DIRECTION_RIGHT) return DIRECTION_LEFT;
 }
-//format (m-x, m_y,HP)
-var HISTORY = {};
-function IsStucking(){
-	var returnstuck = {};
-	returnstuck["MyStuckTanks"] = [];
-	returnstuck["EnemyStuckTanks"] = [];
-	if (isEmpty(HISTORY)){
-		for(var i = 0; i < 4; i++){
-			HISTORY["MyTank" +i] = [];
-			HISTORY["EnemyTank" +i] =[];
-			for(var j = 0; j < 5; j++){
-				HISTORY["MyTank" +i].push([0, 0, 0]);
-				HISTORY["EnemyTank" +i].push([0, 0, 0]);
-			}
+
+
+
+function MapGraph(TankId){
+	this.TankId = TankId;
+	this.Current_x = 0;
+	this.Current_y = 0;
+	this.Destine_x = 0;
+	this.Destine_y = 0;
+  var Directions = [[0, -1, DIRECTION_UP], [1, 0, DIRECTION_RIGHT], [0, 1, DIRECTION_DOWN], [-1, 0, DIRECTION_LEFT]];
+	this.GetMyNeighbor = function(Tile_x, Tile_y){
+		Tile_x = Math.round(Tile_x);
+		Tile_y = Math.round(Tile_y);
+		var result = [];
+		var direction;
+		for (dir in Directions){
+			direction = [Tile_x+Directions[dir][0], Tile_y+Directions[dir][1], Directions[dir][2]];
+			if(direction[0] < 1 || direction[0] > MAP_W-2 || direction[1] < 1 || direction[1] > MAP_W -2)
+				continue;
+			result.push(direction);
+		}
+		return result;
+	}
+
+
+
+	this.MYMAP = (function(){
+	var Map = [];
+	for(var i = 0; i < MAP_H; i++){
+		for (var j = 0; j < MAP_W; j++){
+				Map.push([j , i]);
 		}
 	}
-	else{
-		for(var i = 0; i < 4; i++){
-			HISTORY["MyTank" +i].splice(0, 1);
-			HISTORY["MyTank" +i].push([GetMyTank(i).m_x, GetMyTank(i).m_y, GetMyTank(i).m_HP]);
-			if(Math.abs(HISTORY["MyTank" +i][4][0]) - Math.abs(HISTORY["MyTank" +i][0][0]) < 0.2 && Math.abs(HISTORY["MyTank" +i][4][1]) - Math.abs(HISTORY["MyTank" +i][0][1]) < 0.2
-			&& Math.abs(HISTORY["MyTank" +i][4][2]) - Math.abs(HISTORY["MyTank" +i][0][2]) == 0)
-				if(GetMyTank(i).m_HP > 0) returnstuck["MyStuckTanks"].push(i);
-			HISTORY["EnemyTank" +i].splice(0, 1);
-			HISTORY["EnemyTank" +i].push([GetEnemyTank(i).m_x, GetEnemyTank(i).m_y, GetEnemyTank(i).m_HP]);
-			if(Math.abs(HISTORY["EnemyTank" +i][4][0]) - Math.abs(HISTORY["EnemyTank" +i][0][0]) < 0.2 && Math.abs(HISTORY["EnemyTank" +i][4][1]) - Math.abs(HISTORY["EnemyTank" +i][0][1]) < 0.2
-			&& Math.abs(HISTORY["EnemyTank" +i][4][2]) - Math.abs(HISTORY["EnemyTank" +i][0][2]) == 0)
-				if(GetEnemyTank(i).m_HP > 0) returnstuck["EnemyStuckTanks"].push(i);
-		}
+	return Map;
+})();
+
+
+	var Frontier = [];
+	var Pathsequence = [];
+	this.GetFrontierTile =  function(){
+		var result = Frontier.slice(-1)[0];
+		Frontier.splice(-1,1);
+		return result;
 	}
-	return returnstuck;
-}
+	var Map ;
 
-
-// helper function
-function isEmpty(obj) {
-  for(var i in obj) { return false; }
-  return true;
-}
-
-
-function InArray(Element, Array){
-	for( x in Array){
-		if (Array[x] == Element) return true;
-	}
-	return false;
-}
-
-
-
-
-//notice to argument must be floored
-// function TileToTile(SourceTileX, SourceTileY, DestineTileX, DestineTileY){
-// 	var TileLevel ={};
-// 	var PreviousTile = {}
-//
-//
-// }
-
-function SeekDestroy(MyTankIndex){
-	var tempTank = GetMyTank(MyTankIndex);
-	var tempEnemyTank;
-	var ReturnMove = {};
-	var direction;
-	ReturnMove[DIRECTION_UP] = 0;
-	ReturnMove[DIRECTION_DOWN] = 0;
-	ReturnMove[DIRECTION_LEFT] = 0;
-	ReturnMove[DIRECTION_RIGHT] = 0;
-	for(var i = 0; i < 4; i++){
-		tempEnemyTank = GetEnemyTank(i);
-		if((tempEnemyTank == null) ||(tempEnemyTank.m_HP == 0))
-			continue;
-		if(Navigate(tempTank.m_x, tempTank.m_y, tempEnemyTank.m_x, tempEnemyTank.m_y)[UP_DOWN] == DIRECTION_UP)
-			ReturnMove[DIRECTION_UP]++;
-		if(Navigate(tempTank.m_x, tempTank.m_y, tempEnemyTank.m_x, tempEnemyTank.m_y)[UP_DOWN] == DIRECTION_DOWN)
-			ReturnMove[DIRECTION_DOWN]++;
-		if(Navigate(tempTank.m_x, tempTank.m_y, tempEnemyTank.m_x, tempEnemyTank.m_y)[LEFT_RIGHT] == DIRECTION_LEFT)
-			ReturnMove[DIRECTION_LEFT]++;
-		if(Navigate(tempTank.m_x, tempTank.m_y, tempEnemyTank.m_x, tempEnemyTank.m_y)[LEFT_RIGHT] == DIRECTION_RIGHT)
-			ReturnMove[DIRECTION_RIGHT]++;
-		}
-		var PowerUp = GetPowerUpList();
-		for(var i = 0;i < PowerUp.length; i++){
-			if(Navigate(tempTank.m_x, tempTank.m_y, PowerUp.m_x, PowerUp.m_y)[UP_DOWN] == DIRECTION_UP)
-				ReturnMove[DIRECTION_UP]++;
-			if(Navigate(tempTank.m_x, tempTank.m_y, PowerUp.m_x, PowerUp.m_y)[UP_DOWN] == DIRECTION_DOWN)
-				ReturnMove[DIRECTION_DOWN]++;
-			if(Navigate(tempTank.m_x, tempTank.m_y, PowerUp.m_x, PowerUp.m_y)[LEFT_RIGHT] == DIRECTION_LEFT)
-				ReturnMove[DIRECTION_LEFT]++;
-			if(Navigate(tempTank.m_x, tempTank.m_y, PowerUp.m_x, PowerUp.m_y)[LEFT_RIGHT] == DIRECTION_RIGHT)
-				ReturnMove[DIRECTION_RIGHT]++;
-		}
-		var returnarray = [];
-			for(i in ReturnMove)
-			{
-				if(ReturnMove[i] > 0)
-				{
-					returnarray.push(i);
-				}
-			}
-		return returnarray;
-
-}
-
-function FoundCommon(array1, array2){
-	var arrayreturn = [];
-	for (var i = 0; i < array1.length; i++){
-		for( var j = 0; j < array2.length; j++){
-
-			if (array1[i] == array2[j]) arrayreturn.push(array1[i]);
-		}
-	}
-	return arrayreturn;
-}
-
-function VerboseDirection(DirectionId){
-	if(DirectionId == 1) return "DIRECTION_UP";
-	if(DirectionId == 2) return "DIRECTION_RIGHT";
-	if(DirectionId == 3) return "DIRECTION_DOWN";
-	if(DirectionId == 4) return "DIRECTION_LEFT";
-	if(DirectionId == null) return "Go Forth";
-}
-
-
-
-function LockOn (MyTankId){
-
-	var returncommand ={};
-	returncommand["direction"] =  TankMarch();
-	returncommand["shot"] = false;
-	var tempTank = GetMyTank(MyTankId);
-	// Don't waste effort if tank was dead
-
-
-	var enemytank;
-		for(var j=0; j < TagetTanks(tempTank).length; j++)
-		{
-			console.log("Tank " + MyTankId  + " In LOCK on Enemy Tank" + j);
-			enemytank = TagetTanks(tempTank)[j];
-			var IsClearShot = ClearShot(tempTank.m_x, tempTank.m_y, enemytank.m_x, enemytank.m_y);
-			var tempNavigate = Navigate(tempTank.m_x, tempTank.m_y, enemytank.m_x, enemytank.m_y);
-			if ( IsClearShot != UP_DOWN && IsClearShot != LEFT_RIGHT){
-				if( j == TagetTanks(tempTank).length -1){
-					if(ClearShot[0] == BLOCK_SOFT_OBSTACLE){
-						returncommand["direction"] = tempNavigate[IsClearShot[1]];
-						returncommand["shot"] = true;
-						break;
-					}
-					else{
-						if (!InArray(returncommand["direction"], GetTankDirection(MyTankId)))
-							returncommand["direction"] = TankFindAWay(MyTankId)[0];
-							console.log("LOCKON else lopp calling TANKFINDAWAY");
-							break;
-					}
-
-				}
-				else continue;
-			 }
-			else if (IsClearShot == UP_DOWN) {
-				if (tempTank.m_coolDown == 0){
-					returncommand["direction"] = tempNavigate[UP_DOWN];
-					returncommand["shot"] = true;
-					break;
-				}
-				if (tempTank.m_coolDown > 0) {
-					returncommand["direction"] = tempNavigate[LEFT_RIGHT];
-					if(enemytank.m_disabled == true ||enemytank.m_coolDown > 0 && tempTank.m_type == TANK_HEAVY &&
-						(enemytank.m_direction != Opposite(tempNavigate[UP_DOWN])))
+	this.path = [];
+	this.SchedulePath = function(){
+		//make array of map coordination
+		var Source_x = Math.floor(this.Current_x);
+		var Source_y = Math.floor(this.Current_y);
+		var Destine_x = Math.floor(this.Destine_x);
+		var Destine_y = Math.floor(this.Destine_y);
+		Frontier.push([Source_x, Source_y]);
+		Pathsequence.push([Source_x, Source_y, 0]);
+		while (Frontier.length > 0) {
+			var current = this.GetFrontierTile();
+			console.log("current frontier: " + current +"----------------");
+			var currentNeighbor = this.GetMyNeighbor(current[0], current[1]);
+			for (i in currentNeighbor){
+				var temp = currentNeighbor[i];
+				console.log("current neighbor:" +temp +"***********");
+				//neighbor current node is destination
+				if(temp[0] == Destine_x && temp[1] == Destine_y){
+					Pathsequence.push([temp[0], temp[1], temp[2]]);
+					this.path.push([temp[0], temp[1], temp[2]]);
+					var pointer = [temp[0], temp[1], temp[2]];
+					var direction, precede_x, precede_y;
+					while(pointer[0] != Source_x || pointer[1] != Source_y)
 					{
-						console.log("It is EMP go for the kill====================================================");
-						returncommand["shot"] = false;
-						break;
+						console.log(pointer + "source x: "+ Source_x + "y" + Source_y);
+						direction = Directions[Opposite(pointer[2])-DIRECTION_UP];
+						precede_x = pointer[0] + direction[0];
+						precede_y = pointer[1] + direction[1];
+						for (i in Pathsequence){
+							if (precede_x == Pathsequence[i][0] && precede_y == Pathsequence[i][1]){
+								pointer = Pathsequence[i];
+								console.log("pointer at" + pointer);
+								this.path.push(Pathsequence[i]);
+							}
+						}
 					}
-					else {
-						returncommand["direction"] = Opposite(returncommand["direction"]);
-						if (!InArray(returncommand["direction"], GetTankDirection(MyTankId)))
-							returncommand["direction"] = TankFindAWay(MyTankId)[0];
-						returncommand["shot"] = false;
-						break;
-					}
-
+					return this.path;
 				}
+        var InPath = (function(){
+          for(var i = 0; i < Pathsequence.length; i++){
+            if(temp[0] == Pathsequence[i][0] && temp[1] == Pathsequence[i][1])
+              return true;
+            }
+            return false;
+        })();
+
+
+        if(!InPath && Map[temp[1]*MAP_H + temp[0]] != null){
+          Frontier.push([temp[0], temp[1]]);
+					Pathsequence.push([temp[0], temp[1], temp[2]]);
+					delete Map[temp[1]*MAP_H + temp[0]];
+        }
 			}
-			else if (IsClearShot == LEFT_RIGHT) {
-				if (tempTank.m_coolDown ==0){
-					returncommand["direction"] = tempNavigate[LEFT_RIGHT];
-					returncommand["shot"] = true;
-					console.log("tank " + i+"shutting at Left_Right" + IsClearShot);
-					break;
-				}
-				if (tempTank.m_coolDown >0){
-					returncommand["direction"] = tempNavigate[UP_DOWN];
-					if(enemytank.m_disabled == true ||(enemytank.m_coolDown > 0 && tempTank.m_type == TANK_HEAVY &&
-						enemytank.m_direction != Opposite(tempNavigate[LEFT_RIGHT])))
-					{
-						console.log("It is EMP go for the kill====================================================");
-						returncommand["shot"] = false;
-						break;
-					}
-					else {
-						returncommand["direction"] = Opposite(returncommand["direction"]);
-						if (!InArray(returncommand["direction"], GetTankDirection(MyTankId)))
-							returncommand["direction"] = TankFindAWay(MyTankId)[0];
-						returncommand["shot"] = false;
-						break;
-					}
-				}
-			}
-
-		 }
-	console.log("direction "+ returncommand["direction"] + " shot " + returncommand["shot"]);
-	return returncommand;
-}
-
-function GetMyBases(id){
-	return g_bases[g_team][id];
-}
-
-function GetEnemyBases(id){
-	return g_bases[TEAM_1+ TEAM_2 - g_team][id];
-}
-
-function StuckSolution(TankId){
-	var direction = GetMyTank(TankId).m_direction;
-	if(InArray(TankId, IsStucking()["MyStuckTanks"])){
-
-		console.log("tank i stuck in "+ IsStucking()["MyStuckTanks"]);
-		if (!InArray(direction, GetTankDirection(TankId)))
-		{
-			console.log("Tank " +TankId+ " exit way is block before getrandom direction" + VerboseDirection(direction));
-			direction = GetTankDirection(TankId)[Math.round((Math.random() * 3))];
 		}
-		else{
-			direction = FoundCommon(SeekDestroy(TankId), GetTankDirection(TankId))[Math.round((Math.random() * 3))];
-			console.log("found random direction in Stuck");
+		return "no path found";
+	}
+
+	this.MapInit = function(){
+		this.path = [];
+		Map = this.MYMAP.slice(0);
+		// clean object from Map
+		var tempObject;
+		//delete obstacles from moveable map
+		for (i in g_obstacles){
+			tempObject = g_obstacles[i];
+			delete Map[tempObject.m_y*MAP_W+tempObject.m_x];
 		}
+		//delete hard obstacle from moable map
+		for (i in g_hardObstacles){
+			tempObject = g_hardObstacles[i];
+			delete Map[tempObject.m_y*MAP_H+tempObject.m_x];
+		}
+		var tempTank;
+		for(var i = 0; i < NUMBER_OF_TANK; i++){
+			tempTank = GetMyTank(i);
+			delete Map[tempTank.m_y*MAP_H + tempTank.m_x];
+			if (tempTank.m_x != Math.floor(tempTank.m_x)) delete Map[tempTank.m_y*MAP_H + tempTank.m_x+1];
+			if (tempTank.m_y != Math.floor(tempTank.m_y)) delete Map[(tempTank.m_y+1)*MAP_H + tempTank.m_x];
+			if (tempTank.m_x != Math.floor(tempTank.m_x) && tempTank.m_y != Math.floor(tempTank.m_y))
+				delete Map[(tempTank.m_y+1)*MAP_H + tempTank.m_x+1];
+
+			tempTank = GetEnemyTank(i);
+			if (tempTank.m_x != Math.floor(tempTank.m_x)) delete Map[tempTank.m_y*MAP_H + tempTank.m_x+1];
+			if (tempTank.m_y != Math.floor(tempTank.m_y)) delete Map[(tempTank.m_y+1)*MAP_H + tempTank.m_x];
+			if (tempTank.m_x != Math.floor(tempTank.m_x) && tempTank.m_y != Math.floor(tempTank.m_y))
+				delete Map[(tempTank.m_y+1)*MAP_H + tempTank.m_x+1];
+		}
+	}
+
+	this.MoveOnPath = function(){
+		var direction;
+		if()
 
 	}
-	return direction;
+
+
 }
-
-function TankFindAWay(i){
-	var direction;
-	var shot;
-	if (Math.random() > 0.9){
-		direction = FoundCommon(SeekDestroy(i), GetTankDirection(i))[Math.round((Math.random() * 3))];
-		shot = false;
-		console.log("Tank "+ i +" go random" +VerboseDirection(direction));
-	}
-	else {
-			console.log("Tank "+ i+" go forth");
-			direction = GetMyTank(i).m_direction;
-			if (!InArray(direction, GetTankDirection(i)))
-				direction = FoundCommon(SeekDestroy(i), GetTankDirection(i))[Math.round((Math.random() * 3))];
-			shot = false;
-	}
-	if (direction == null) direction = GetMyTank(i).m_direction;
-	console.log("return direction: "+ direction +" return shot: "+ shot);
-	return [direction, shot];
-}
-//===========================================================================================================
+var newmapobject = new MapGraph(0);
 
 
-
-
-
-
-
-
+//=============================================================================================================
 function Update() {
-  // =========================================================================================================
+	// =========================================================================================================
 	// Do nothing if the match is ended
 	// You should keep this. Removing it probably won't affect much, but just keep it.
 	// =========================================================================================================
@@ -1235,6 +1097,7 @@ function Update() {
 	}
 
 
+
 	// =========================================================================================================
 	// This is an example on how you command your tanks.
 	// In this example, I go through all of my "still intact" tanks, and give them random commands.
@@ -1242,33 +1105,20 @@ function Update() {
 	// Loop through all tank (if not dead yet)
 	for (var i=0; i<NUMBER_OF_TANK; i++) {
 		var tempTank = GetMyTank(i);
+		// Don't waste effort if tank was dead
 		if((tempTank == null) ||(tempTank.m_HP == 0))
 			continue;
+		// Run randomly and fire as soon as cooldown finish.
+		// You may want a more ... intelligent algorithm here.
+	}
 
-		var direction = tempTank.m_direction;
-		var shot = false;
-
-
-		if (TagetTanks(tempTank).length != 0)
-		{
-			var lockoncall = LockOn(i);
-			console.log("calling Lock ON direction " + lockoncall["direction"] +" shot "+ lockoncall["shot"]);
-			direction = lockoncall["direction"];
-			shot = lockoncall["shot"];
-		}
-		else {
-			direction = TankFindAWay(i)[0];
-			shot = TankFindAWay(i)[1];
-			console.log("tankfind a way: " + TankFindAWay(i));
-		}
-
-		console.log("tank "+i+" final destination"+ VerboseDirection(direction));
-		// console.log("my current potision x: "+tempTank.m_x + " y: " + tempTank.m_y);
-		CommandTank(i, direction, true, shot);
-}
-
-
-
+  newmapobject.Current_x = 1;
+  newmapobject.Current_y = 1;
+  newmapobject.Destine_x = 20;
+  newmapobject.Destine_y = 20;
+	newmapobject.MapInit();
+  var mypath = newmapobject.SchedulePath();
+	console.log(mypath);
 
 	// =========================================================================================================
 	// This is an example on how you use your power up if you acquire one.
@@ -1291,7 +1141,6 @@ function Update() {
 			}
 		}
 	}
-
 
 	// Leave this here, don't remove it.
 	// This command will send all of your tank command to server
